@@ -31,7 +31,7 @@ from core.sport_config import load_sport, available_sports
 from core import queries as q
 from core import matcher, aggregator, alert_builder, sharp_filter
 from adapters.odds import espn, sportsgameodds
-from adapters.social import reddit, bluesky, twitterapi_io, fourchan, youtube
+from adapters.social import reddit, bluesky, twitterapi_io, fourchan, youtube, threads
 from adapters.social import telegram_channels as telegram
 from adapters.social.base import dedupe_posts
 from pipeline import delivery, news_dedup
@@ -88,6 +88,17 @@ def fetch_social(cfg, game_data: dict, max_search_queries: int = 30) -> list:
                 query, limit=25, source_game=item["game"], source_label=label))
     else:
         log.warning("Bluesky search skipped (no BLUESKY_HANDLE/APP_PASSWORD)")
+
+    # ── Threads: one keyword search per game (500/7d platform budget) ───
+    if threads.enabled():
+        for matchup, g in games.items():
+            away_nick = team_nickname(g["away"], cfg.team_keywords)
+            home_nick = team_nickname(g["home"], cfg.team_keywords)
+            posts.extend(threads.search(
+                f"{away_nick} {home_nick} bets", limit=25,
+                source_game=matchup, source_label="_game_general"))
+    else:
+        log.info("Threads source skipped (no THREADS_ACCESS_TOKEN)")
 
     # ── YouTube: one picks-video search per game (comments = public) ────
     if youtube.enabled():

@@ -1,0 +1,129 @@
+{
+  "display_name": "NFL",
+  "espn": {
+    "league_path": "football/nfl"
+  },
+  "sportsgameodds": {
+    "league_id": "NFL"
+  },
+  "prop_markets": [
+    {
+      "key": "passingYards",
+      "label": "Passing Yards",
+      "stat": "passing yards"
+    },
+    {
+      "key": "rushingYards",
+      "label": "Rushing Yards",
+      "stat": "rushing yards"
+    },
+    {
+      "key": "receivingYards",
+      "label": "Receiving Yards",
+      "stat": "receiving yards"
+    },
+    {
+      "key": "receptions",
+      "label": "Receptions",
+      "stat": "receptions"
+    },
+    {
+      "key": "passingTouchdowns",
+      "label": "Passing TDs",
+      "stat": "passing tds"
+    },
+    {
+      "key": "touchdowns",
+      "label": "Anytime TD",
+      "stat": "touchdowns"
+    }
+  ],
+  "stat_aliases": {
+    "passing yards": [
+      "pass yards",
+      "passing yards",
+      "pass yds",
+      "passing yds"
+    ],
+    "rushing yards": [
+      "rush yards",
+      "rushing yards",
+      "rush yds",
+      "rushing yds"
+    ],
+    "receiving yards": [
+      "rec yards",
+      "receiving yards",
+      "rec yds",
+      "receiving yds"
+    ],
+    "receptions": [
+      "receptions",
+      "catches",
+      "recs"
+    ],
+    "passing tds": [
+      "passing tds",
+      "pass tds",
+      "passing touchdowns"
+    ],
+    "touchdowns": [
+      "td",
+      "tds",
+      "touchdown",
+      "touchdowns",
+      "anytime td",
+      "scores a td"
+    ]
+  },
+  "team_keywords": {
+    "Cardinals": "Arizona Cardinals",
+    "Falcons": "Atlanta Falcons",
+    "Ravens": "Baltimore Ravens",
+    "Bills": "Buffalo Bills",
+    "Panthers": "Carolina Panthers",
+    "Bears": "Chicago Bears",
+    "Bengals": "Cincinnati Bengals",
+    "Browns": "Cleveland Browns",
+    "Cowboys": "Dallas Cowboys",
+    "Broncos": "Denver Broncos",
+    "Lions": "Detroit Lions",
+    "Packers": "Green Bay Packers",
+    "Texans": "Houston Texans",
+    "Colts": "Indianapolis Colts",
+    "Jaguars": "Jacksonville Jaguars",
+    "Jags": "Jacksonville Jaguars",
+    "Chiefs": "Kansas City Chiefs",
+    "Raiders": "Las Vegas Raiders",
+    "Chargers": "Los Angeles Chargers",
+    "Rams": "Los Angeles Rams",
+    "Dolphins": "Miami Dolphins",
+    "Vikings": "Minnesota Vikings",
+    "Patriots": "New England Patriots",
+    "Pats": "New England Patriots",
+    "Saints": "New Orleans Saints",
+    "Giants": "New York Giants",
+    "NYG": "New York Giants",
+    "Jets": "New York Jets",
+    "NYJ": "New York Jets",
+    "Eagles": "Philadelphia Eagles",
+    "Steelers": "Pittsburgh Steelers",
+    "49ers": "San Francisco 49ers",
+    "Niners": "San Francisco 49ers",
+    "Seahawks": "Seattle Seahawks",
+    "Buccaneers": "Tampa Bay Buccaneers",
+    "Bucs": "Tampa Bay Buccaneers",
+    "Titans": "Tennessee Titans",
+    "Commanders": "Washington Commanders"
+  },
+  "subreddits": [
+    "sportsbook",
+    "nfl",
+    "sportsbetting"
+  ],
+  "bluesky_extra_terms": [],
+  "telegram_channels": [],
+  "chan_boards": [
+    "sp"
+  ]
+}

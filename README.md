@@ -9,7 +9,7 @@ The Odds API and Apify dependencies are gone. Sources are now:
 | Layer | Primary (free) | Optional (paid/keyed) |
 |---|---|---|
 | Odds/lines | ESPN hidden API (keyless) | SportsGameOdds (props, free tier key) |
-| Social | Reddit (script app)*, Bluesky (app password), 4chan /sp/ (keyless), YouTube (free key), Telegram channels (free MTProto app) | twitterapi.io (~$0.15/1K tweets) |
+| Social | Reddit (script app)*, Bluesky (app password), 4chan /sp/ (keyless), YouTube (free key), Telegram channels (free MTProto app), Threads (Meta app, 500 searches/7d) | twitterapi.io (~$0.15/1K tweets) |
 
 \* Reddit requires manual approval since the Nov 2025 Responsible Builder
 Policy — apply via the Developer Support form; the adapter stays dormant
@@ -37,6 +37,7 @@ adapters/
   social/fourchan.py       /sp/ game threads, keyless (public-tier signal)
   social/youtube.py        Picks-video comments (YOUTUBE_API_KEY, free quota)
   social/telegram_channels.py  Public capper channels via Telethon
+  social/threads.py        Meta Threads keyword search w/ weekly budget guard
   social/twitterapi_io.py  Optional tracked-account timelines + search
 scripts/telegram_login.py  One-time Telegram session setup
 sports/<key>/          Sport packs: config.json (+ players/accounts maps)
@@ -55,7 +56,10 @@ cp .env.example .env   # fill in the free Reddit + Bluesky credentials
 ```bash
 python3 -m pipeline.run --sport mlb                       # today's slate
 python3 -m pipeline.run --sport nba --date 2026-10-25 --format markdown
+python3 -m pipeline.run --sport nfl --no-notify           # skip Telegram send
 ```
+
+Sport packs shipped: `nba`, `mlb`, `nfl`.
 
 Outputs land under `data/<sport>/{queries,raw,sentiment,alerts}/`.
 
