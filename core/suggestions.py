@@ -148,11 +148,87 @@ def _game_buzz(buzz_idx: dict, game_key: str) -> int:
                buzz_idx.get((game_key, "multiple props"), 0))
 
 
+def _market_evidence(sig: dict, side: str):
+    """Score adjustment + why-text + flags from a prediction-market
+    signal for a game-winner-correlated market (the spread).
+    Returns (points, basis_upgrade, why_bits, flags)."""
+    if not sig or sig.get("edge") is None:
+        return 0.0, False, [], []
+    edge = sig["edge"]
+    move = sig.get("move")
+    thin = sig.get("thin", False)
+    picked_home = side == "over/home"
+    aligned = (edge > 0) == picked_home
+
+    points = 0.0
+    upgrade = False
+    why = []
+    flags = []
+    pm_txt = (f"PM {sig['pm_home_prob']:.0%} vs books "
+              f"{sig['book_home_prob']:.0%} home ({edge:+.1%})")
+    if aligned and abs(edge) >= 0.03:
+        points = min(abs(edge) * 250, 25)
+        if thin:
+            points /= 2
+        upgrade = True
+        why.append("prediction mkts agree: " + pm_txt
+                   + (" [thin]" if thin else ""))
+    elif not aligned and abs(edge) >= 0.04:
+        points = -10.0
+        flags.append("market-against")
+        why.append("prediction mkts DISAGREE: " + pm_txt)
+    if move is not None and abs(move) >= 0.04 and (move > 0) == picked_home:
+        points += 8
+        flags.append("steam")
+        why.append(f"steam {move:+.1%} today")
+    return round(points, 1), upgrade, why, flags
+
+
+def _market_only_play(game_key: str, game: dict, market_signals: dict,
+                      news: list, team_keywords: dict, date: str):
+    """A play from prediction-market/book divergence alone (edge >= 6%).
+    Capped at B — price disagreement is real-money evidence but not
+    sharp-social confirmation."""
+    sig = market_signals.get(game_key)
+    if not sig or sig.get("edge") is None or abs(sig["edge"]) < 0.06:
+        return None
+    side = "over/home" if sig["edge"] > 0 else "under/away"
+    # Steeper scale than the evidence bonus: a 6%+ dislocation in an
+    # efficient market is the entire thesis here, not a tiebreaker.
+    # 6% -> C, ~10% -> B; thin books halved.
+    score = min(abs(sig["edge"]) * 400, 40)
+    if sig.get("thin"):
+        score /= 2
+    _, _, mkt_why, mkt_flags = _market_evidence(sig, side)
+    if "steam" in mkt_flags:
+        score += 8
+    score = round(score + 5, 1)
+    confidence = _confidence(score)
+    if not confidence:
+        return None
+    return {
+        "game": game_key,
+        "market": "spread",
+        "is_prop": False,
+        "side": side,
+        "line": (game.get("spread") or {}).get("line"),
+        "pick": _pick_text("spread", side, game, team_keywords),
+        "score": score,
+        "confidence": "B" if confidence == "A" else confidence,
+        "why": "; ".join(mkt_why) or "prediction-market edge vs books",
+        "flags": mkt_flags + ["market-only"],
+        "news": list(news),
+        "date": date,
+    }
+
+
 def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
-                      team_keywords: dict, flip_state: dict = None) -> dict:
+                      team_keywords: dict, flip_state: dict = None,
+                      market_signals: dict = None) -> dict:
     """Returns {suggestions, flip_watch, flip_triggered, no_edge,
     news_watch, new_flip_state}."""
     flip_state = dict(flip_state or {})
+    market_signals = market_signals or {}
     games = game_data.get("games", {})
     buzz_idx = _buzz_index(alert_data.get("alerts", []))
 
@@ -224,13 +300,26 @@ def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
             score, basis = _score_market(mdata, buzz_accounts)
             if flipped:
                 score += 15  # the fade setup completing is the signal
+
+            # Prediction-market evidence applies to the winner-correlated
+            # market (spread), not totals or props
+            mkt_why, mkt_flags = [], []
+            if market == "spread":
+                pts, upgrade, mkt_why, mkt_flags = _market_evidence(
+                    market_signals.get(game_key), side)
+                score = round(score + pts, 1)
+                if upgrade and basis == "public":
+                    basis = "market"
+
             confidence = _confidence(score)
             if basis == "public" and confidence:
                 confidence = "C"
+            elif basis == "market" and confidence == "A":
+                confidence = "B"  # A needs sharp evidence, not price alone
             if not confidence:
                 continue
 
-            flags = []
+            flags = list(mkt_flags)
             if basis == "public":
                 flags.append("public-only")
             if news:
@@ -258,7 +347,8 @@ def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
                 "pick": _pick_text(market, side, game, team_keywords),
                 "score": score,
                 "confidence": confidence,
-                "why": _why(mdata, buzz_accounts, basis),
+                "why": "; ".join(mkt_why + [_why(mdata, buzz_accounts, basis)])
+                       if mkt_why else _why(mdata, buzz_accounts, basis),
                 "flags": flags,
                 "news": news[:2],
                 "date": date,
@@ -268,7 +358,30 @@ def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
                 flip_triggered.append(entry)
             game_had_play = True
 
+        # Market-only play: big prediction-market/book divergence with no
+        # social suggestion on the game
         if not game_had_play:
+            entry = _market_only_play(game_key, game, market_signals,
+                                      news, team_keywords, date)
+            if entry:
+                suggestions.append(entry)
+                game_had_play = True
+
+        if not game_had_play:
+            no_edge.append(game_key)
+
+    # Slate games with zero social posts never enter the loop above —
+    # they can still carry a prediction-market edge, and belong in
+    # no-edge otherwise
+    for game_key, game in games.items():
+        if game_key in sentiment_data.get("games", {}):
+            continue
+        entry = _market_only_play(game_key, game, market_signals,
+                                  news_by_game.get(game_key, [])[:2],
+                                  team_keywords, date)
+        if entry:
+            suggestions.append(entry)
+        else:
             no_edge.append(game_key)
 
     # Expire flip entries from earlier dates (their games are over)

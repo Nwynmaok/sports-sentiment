@@ -115,5 +115,11 @@
   "telegram_channels": [],
   "chan_boards": [
     "sp"
-  ]
+  ],
+  "polymarket": {
+    "tag_slug": "mlb"
+  },
+  "kalshi": {
+    "series_ticker": "KXMLBGAME"
+  }
 }

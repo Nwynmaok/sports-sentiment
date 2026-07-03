@@ -31,6 +31,7 @@ from core.sport_config import load_sport, available_sports
 from core import queries as q
 from core import matcher, aggregator, alert_builder, sharp_filter, suggestions
 from adapters.odds import espn, sportsgameodds
+from adapters.markets import signals as prediction_markets
 from adapters.social import reddit, bluesky, twitterapi_io, fourchan, youtube, threads
 from adapters.social import telegram_channels as telegram
 from adapters.social.base import dedupe_posts
@@ -174,6 +175,10 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) 
              f"({sum(len(g['props']) for g in game_data['games'].values())} props) "
              f"via {game_data['source']}")
 
+    # Step 1b: prediction-market probabilities (Polymarket + Kalshi, keyless)
+    market_signals = prediction_markets.build_signals(
+        cfg, date, game_data, data_dir / "state")
+
     # Step 2+3: social posts
     log.info("[2/4] Fetching social posts (reddit/bluesky/twitter)")
     posts = fetch_social(cfg, game_data, max_search_queries=max_queries)
@@ -214,7 +219,8 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) 
         except (json.JSONDecodeError, OSError):
             pass
     sug_data = suggestions.build_suggestions(
-        game_data, sentiment_data, alert_data, cfg.team_keywords, flip_state)
+        game_data, sentiment_data, alert_data, cfg.team_keywords, flip_state,
+        market_signals=market_signals)
     with open(flip_path, "w") as f:
         json.dump(sug_data.pop("new_flip_state"), f, indent=1)
     with open(data_dir / "suggestions" / f"{date}.json", "w") as f:
