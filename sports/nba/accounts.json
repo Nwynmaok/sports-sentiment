@@ -1,0 +1,448 @@
+{
+  "_last_updated": "2026-03-28",
+  "_note": "Tiers: tracked (highest weight sharps), sharp (proven bettors), analytics (data-driven analysts), news (injury/lineup breakers). Weight 0.0-1.0 determines signal strength in aggregator.",
+
+  "tracked": [
+    {
+      "handle": "haralabob",
+      "name": "Haralabos Voulgaris",
+      "tier": "tracked",
+      "weight": 1.0,
+      "tags": ["nba", "spreads", "totals", "legendary-sharp"],
+      "note": "Legendary NBA bettor, former Mavs Director of Quantitative R&D."
+    },
+    {
+      "handle": "PropBomb",
+      "name": "Prop Bomb",
+      "tier": "tracked",
+      "weight": 0.95,
+      "tags": ["nba", "props", "player-props"],
+      "note": "NBA prop specialist. Action Network contributor."
+    },
+    {
+      "handle": "whale_capper",
+      "name": "Drew Dinsick",
+      "tier": "tracked",
+      "weight": 0.9,
+      "tags": ["nba", "props", "spreads", "tennis"],
+      "note": "NBA/NFL/tennis handicapper. NBC Sports Bet analyst."
+    },
+    {
+      "handle": "TeddyCovers",
+      "name": "Teddy Covers",
+      "tier": "tracked",
+      "weight": 0.85,
+      "tags": ["nba", "nfl", "sharp"],
+      "note": "Veteran sports bettor and handicapper."
+    },
+    {
+      "handle": "capjack2000",
+      "name": "Cap Jack",
+      "tier": "tracked",
+      "weight": 0.85,
+      "tags": ["nba", "nfl", "sharp"],
+      "note": "Sports bettor, power ratings. BetTheBoardPod co-host."
+    },
+    {
+      "handle": "Vsaaauce",
+      "name": "Vsaaauce",
+      "tier": "tracked",
+      "weight": 0.85,
+      "tags": ["nba", "props", "sharp"],
+      "note": "NBA prop and spread bettor."
+    },
+    {
+      "handle": "bradpowers7",
+      "name": "Brad Powers",
+      "tier": "tracked",
+      "weight": 0.85,
+      "tags": ["nba", "nfl", "props", "analytics"],
+      "note": "Action Network analyst. Data-driven props and spreads."
+    },
+    {
+      "handle": "SportsCheetah",
+      "name": "Preston Johnson",
+      "tier": "tracked",
+      "weight": 0.85,
+      "tags": ["nba", "nfl", "sports-psychology"],
+      "note": "Uses sports psychology and behavioral finance for picks."
+    },
+    {
+      "handle": "Krackman",
+      "name": "Bill Krackomberger",
+      "tier": "tracked",
+      "weight": 0.85,
+      "tags": ["nba", "nfl", "sharp", "pro-bettor"],
+      "note": "Pro sports bettor. Industry watchdog."
+    },
+    {
+      "handle": "propsdotcash",
+      "name": "Props.Cash",
+      "tier": "tracked",
+      "weight": 0.85,
+      "tags": ["nba", "props", "player-props", "data"],
+      "note": "Player prop research platform. Stats-backed NBA and MLB prop picks."
+    },
+    {
+      "handle": "ActionNetworkHQ",
+      "name": "Action Network",
+      "tier": "tracked",
+      "weight": 0.8,
+      "tags": ["nba", "nfl", "mlb", "market-data", "line-movement"],
+      "note": "Betting trends, sharp reports, line movement data. Industry standard."
+    },
+    {
+      "handle": "ToddFuhrman",
+      "name": "Todd Fuhrman",
+      "tier": "tracked",
+      "weight": 0.8,
+      "tags": ["nba", "nfl", "odds", "ex-oddsmaker"],
+      "note": "Former Caesars oddsmaker. BetTheBoardPod host."
+    },
+    {
+      "handle": "CallingOurShot",
+      "name": "Calling Our Shot",
+      "tier": "tracked",
+      "weight": 0.75,
+      "tags": ["nba"],
+      "note": ""
+    },
+    {
+      "handle": "TheRowdyRhymes",
+      "name": "The Rowdy Rhymes",
+      "tier": "tracked",
+      "weight": 0.75,
+      "tags": ["nba"],
+      "note": ""
+    },
+    {
+      "handle": "AlexCaruso",
+      "name": "Alex Caruso",
+      "tier": "tracked",
+      "weight": 0.75,
+      "tags": ["nba"],
+      "note": ""
+    },
+    {
+      "handle": "thejoeholkashow",
+      "name": "The Joe Holka Show",
+      "tier": "tracked",
+      "weight": 0.75,
+      "tags": ["nba"],
+      "note": ""
+    },
+    {
+      "handle": "EVBettors",
+      "name": "EV Bettors",
+      "tier": "tracked",
+      "weight": 0.75,
+      "tags": ["nba"],
+      "note": ""
+    }
+  ],
+
+  "sharp": [
+    {
+      "handle": "ChrisRaybon",
+      "name": "Chris Raybon",
+      "tier": "sharp",
+      "weight": 0.8,
+      "tags": ["nba", "nfl", "props"],
+      "note": "Action Network Senior Editor. NFL/NBA betting and fantasy."
+    },
+    {
+      "handle": "BAndersonNBA",
+      "name": "Brandon Anderson",
+      "tier": "sharp",
+      "weight": 0.75,
+      "tags": ["nba", "futures", "spreads"],
+      "note": "Action Network NBA writer."
+    },
+    {
+      "handle": "ArielEpstein",
+      "name": "Ariel Epstein",
+      "tier": "sharp",
+      "weight": 0.75,
+      "tags": ["nba", "nfl", "mlb", "props"],
+      "note": "Prop Queen. Sports betting host/analyst for Yahoo Sportsbook, MLB Network, NBA TV."
+    },
+    {
+      "handle": "SpikeWeek",
+      "name": "Erik Beimfohr",
+      "tier": "sharp",
+      "weight": 0.75,
+      "tags": ["nba", "nfl", "props", "best-ball"],
+      "note": "NFL and NBA player prop specialist. Spikeweek.com."
+    },
+    {
+      "handle": "monotonefootbal",
+      "name": "Monotone Football",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "nfl", "gambling"],
+      "note": "Gambling & DC Sports. Formerly 4for4, VegasInsider, OddsChecker."
+    },
+    {
+      "handle": "croucherJD",
+      "name": "Jay Croucher",
+      "tier": "sharp",
+      "weight": 0.75,
+      "tags": ["nba", "nfl", "spreads"],
+      "note": "NBC Sports betting expert."
+    },
+    {
+      "handle": "VmoneySports",
+      "name": "Vaughn Dalzell",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "nfl", "props"],
+      "note": "NBC Sports betting content."
+    },
+    {
+      "handle": "MrBradThomas",
+      "name": "Brad Thomas",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "nfl", "analysis"],
+      "note": "NBC Sports betting expert."
+    },
+    {
+      "handle": "GUnit_81",
+      "name": "GUnit",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "ncaab", "spreads"],
+      "note": "Host of Coast To Coast Hoops podcast on VSiN."
+    },
+    {
+      "handle": "OutlierDotBet",
+      "name": "Outlier",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "props", "analytics", "ev"],
+      "note": "Player prop analytics platform. EV-focused betting tools."
+    },
+    {
+      "handle": "UpsideTools",
+      "name": "Upside Tools",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "props", "tools"],
+      "note": "Added by Nate."
+    },
+    {
+      "handle": "TheFloridaArber",
+      "name": "The Florida Arber",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "arb", "ev"],
+      "note": "Arbitrage/EV bettor. Added by Nate."
+    },
+    {
+      "handle": "ChesterPicks_",
+      "name": "Chester Picks",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "picks"],
+      "note": "Added by Nate."
+    },
+    {
+      "handle": "ArbThief",
+      "name": "Arb Thief",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "arb", "ev"],
+      "note": "Arbitrage bettor. Added by Nate."
+    },
+    {
+      "handle": "EVLongshots",
+      "name": "EV Longshots",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "ev", "longshots"],
+      "note": "EV-focused longshot props. Added by Nate."
+    },
+    {
+      "handle": "betbigai",
+      "name": "Bet Big AI",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "ai", "picks"],
+      "note": "AI-driven betting picks. Added by Nate."
+    },
+    {
+      "handle": "772_Bets",
+      "name": "772 Bets",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "picks"],
+      "note": "Added by Nate."
+    },
+    {
+      "handle": "ThePicksPro",
+      "name": "The Picks Pro",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "picks"],
+      "note": "Added by Nate."
+    },
+    {
+      "handle": "salbets_",
+      "name": "Sal Bets",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "picks"],
+      "note": "Added by Nate."
+    },
+    {
+      "handle": "clarkknowsball",
+      "name": "Clark Knows Ball",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "picks"],
+      "note": "Added by Nate."
+    },
+    {
+      "handle": "KingPropz",
+      "name": "King Propz",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "props"],
+      "note": "NBA props specialist. Added by Nate."
+    },
+    {
+      "handle": "betbigben",
+      "name": "Bet Big Ben",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "picks"],
+      "note": "Added by Nate."
+    },
+    {
+      "handle": "PlusEV",
+      "name": "Plus EV",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "ev", "props"],
+      "note": "EV-focused bettor. Added by Nate."
+    },
+    {
+      "handle": "CodyBrownBets",
+      "name": "Cody Brown Bets",
+      "tier": "sharp",
+      "weight": 0.7,
+      "tags": ["nba", "picks"],
+      "note": "Added by Nate."
+    },
+    {
+      "handle": "OddsJam",
+      "name": "OddsJam",
+      "tier": "sharp",
+      "weight": 0.75,
+      "tags": ["nba", "ev", "odds", "props", "line-movement"],
+      "note": "EV betting platform. Positive EV and arbitrage tools. Added by Nate."
+    }
+  ],
+
+  "analytics": [
+    {
+      "handle": "nbastats",
+      "name": "NBA Stats",
+      "tier": "analytics",
+      "weight": 0.6,
+      "tags": ["nba", "stats", "official"],
+      "note": "Official NBA advanced stats account."
+    },
+    {
+      "handle": "StatMuse",
+      "name": "StatMuse",
+      "tier": "analytics",
+      "weight": 0.6,
+      "tags": ["nba", "nfl", "stats", "analytics"],
+      "note": "Sports stats and analytics database."
+    },
+    {
+      "handle": "RotoGrinders",
+      "name": "RotoGrinders",
+      "tier": "analytics",
+      "weight": 0.6,
+      "tags": ["nba", "dfs", "props", "news-feed"],
+      "note": "DFS and betting analytics. Comprehensive NBA news twitter feed."
+    },
+    {
+      "handle": "ScoresAndOdds",
+      "name": "Scores and Odds",
+      "tier": "analytics",
+      "weight": 0.55,
+      "tags": ["nba", "odds", "consensus", "line-movement"],
+      "note": "Consensus picks, money splits, and line movement data."
+    },
+    {
+      "handle": "OddsShark",
+      "name": "OddsShark",
+      "tier": "analytics",
+      "weight": 0.55,
+      "tags": ["nba", "odds", "line-movement"],
+      "note": "Odds updates, line movement, and betting trends."
+    },
+    {
+      "handle": "CoversExperts",
+      "name": "Covers",
+      "tier": "analytics",
+      "weight": 0.55,
+      "tags": ["nba", "nfl", "mlb", "consensus"],
+      "note": "Daily news, stats, consensus data."
+    }
+  ],
+
+  "news": [
+    {
+      "handle": "ShamsCharania",
+      "name": "Shams Charania",
+      "tier": "news",
+      "weight": 0.8,
+      "tags": ["nba", "injuries", "trades", "breaking-news"],
+      "note": "Top NBA insider at ESPN."
+    },
+    {
+      "handle": "wojespn",
+      "name": "Adrian Wojnarowski",
+      "tier": "news",
+      "weight": 0.8,
+      "tags": ["nba", "injuries", "trades", "breaking-news"],
+      "note": "Legendary NBA insider."
+    },
+    {
+      "handle": "Underdog",
+      "name": "Underdog NBA",
+      "tier": "news",
+      "weight": 0.6,
+      "tags": ["nba", "injuries", "lineups", "dfs"],
+      "note": "Fast lineup and injury news for NBA DFS/betting."
+    },
+    {
+      "handle": "FantasyLabsNBA",
+      "name": "FantasyLabs NBA",
+      "tier": "news",
+      "weight": 0.65,
+      "tags": ["nba", "injuries", "lineups", "news"],
+      "note": "Real-time NBA news, injury updates, and lineup confirmations."
+    },
+    {
+      "handle": "NBAInjuryR3port",
+      "name": "NBA Injury Report",
+      "tier": "news",
+      "weight": 0.6,
+      "tags": ["nba", "injuries"],
+      "note": "Dedicated NBA injury tracking account."
+    },
+    {
+      "handle": "DrEvanJeffries",
+      "name": "Dr. Evan Jeffries",
+      "tier": "news",
+      "weight": 0.65,
+      "tags": ["nba", "injuries", "medical-analysis"],
+      "note": "Physical therapist and injury analyst."
+    }
+  ]
+}

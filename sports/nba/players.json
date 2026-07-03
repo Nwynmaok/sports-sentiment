@@ -1,0 +1,43 @@
+{
+  "_note": "fantasy = your roster. general = high-volume prop players. team = Odds API team name for filtering to today's games.",
+  "fantasy": [
+    {"name": "LaMelo Ball", "team": "Charlotte Hornets"},
+    {"name": "Nikola Jokic", "team": "Denver Nuggets"},
+    {"name": "LeBron James", "team": "Los Angeles Lakers"},
+    {"name": "De'Aaron Fox", "team": "San Antonio Spurs"},
+    {"name": "Desmond Bane", "team": "Orlando Magic"},
+    {"name": "Anthony Black", "team": "Orlando Magic"},
+    {"name": "OG Anunoby", "team": "New York Knicks"},
+    {"name": "Brandon Podziemski", "team": "Golden State Warriors"},
+    {"name": "DeMar DeRozan", "team": "Sacramento Kings"},
+    {"name": "Bilal Coulibaly", "team": "Washington Wizards"},
+    {"name": "Jusuf Nurkic", "team": "Utah Jazz"},
+    {"name": "Russell Westbrook", "team": "Sacramento Kings"},
+    {"name": "Dejounte Murray", "team": "New Orleans Pelicans"},
+    {"name": "Myles Turner", "team": "Milwaukee Bucks"}
+  ],
+  "general": [
+    {"name": "Jayson Tatum", "team": "Boston Celtics"},
+    {"name": "Jaylen Brown", "team": "Boston Celtics"},
+    {"name": "Anthony Edwards", "team": "Minnesota Timberwolves"},
+    {"name": "Karl-Anthony Towns", "team": "New York Knicks"},
+    {"name": "Jalen Brunson", "team": "New York Knicks"},
+    {"name": "Donovan Mitchell", "team": "Cleveland Cavaliers"},
+    {"name": "Darius Garland", "team": "Los Angeles Clippers"},
+    {"name": "Shai Gilgeous-Alexander", "team": "Oklahoma City Thunder"},
+    {"name": "Chet Holmgren", "team": "Oklahoma City Thunder"},
+    {"name": "Tyrese Haliburton", "team": "Indiana Pacers"},
+    {"name": "Luka Doncic", "team": "Los Angeles Lakers"},
+    {"name": "Giannis Antetokounmpo", "team": "Milwaukee Bucks"},
+    {"name": "Kevin Durant", "team": "Houston Rockets"},
+    {"name": "Stephen Curry", "team": "Golden State Warriors"},
+    {"name": "Trae Young", "team": "Washington Wizards"},
+    {"name": "Bam Adebayo", "team": "Miami Heat"},
+    {"name": "Paolo Banchero", "team": "Orlando Magic"},
+    {"name": "Victor Wembanyama", "team": "San Antonio Spurs"},
+    {"name": "Ja Morant", "team": "Memphis Grizzlies"},
+    {"name": "Damian Lillard", "team": "Portland Trail Blazers"},
+    {"name": "Cade Cunningham", "team": "Detroit Pistons"},
+    {"name": "James Harden", "team": "Cleveland Cavaliers"}
+  ]
+}
