@@ -1,0 +1,300 @@
+"""
+core/suggestions.py
+Rolls the per-market signals (aggregator output + buzz + news alerts)
+into scored betting suggestions — one card per game, props nested.
+
+Deterministic scoring, 0-100 per market:
+
+    divergence signal (fade_public/follow_sharp)   up to 40
+    sharp buzz (2+ tracked/sharp accounts)         25 + 5/extra, cap 35
+    sentiment magnitude                            up to 15
+    post volume                                    up to 10
+    sharp mentions                                 up to 12
+
+Confidence: A >= 60, B >= 40, C >= EMIT_THRESHOLD (28). Below that a
+market contributes nothing and the game may land in "no edge".
+
+Unresolved injury news on a game caps its confidence at B and flags
+the card. One-sided public sentiment with no sharp counter does NOT
+create a suggestion — it goes on the flip watch, and only surfaces as
+a play if a later run sees sharps take the other side.
+"""
+
+import logging
+from datetime import datetime
+
+log = logging.getLogger("pipeline.suggestions")
+
+EMIT_THRESHOLD = 28
+CONFIDENCE_BANDS = [(60, "A"), (40, "B"), (EMIT_THRESHOLD, "C")]
+
+PUBLIC_LOCK_THRESHOLD = 0.50
+
+
+def _confidence(score: float):
+    for floor, band in CONFIDENCE_BANDS:
+        if score >= floor:
+            return band
+    return None
+
+
+def _nickname(full_name: str, team_keywords: dict) -> str:
+    for kw, full in team_keywords.items():
+        if full == full_name:
+            return kw
+    return full_name.split()[-1]
+
+
+def _pick_side(market_data: dict):
+    """Which side does the evidence point at? Returns 'over/home',
+    'under/away', or None."""
+    sharp_lean = market_data.get("sharp_lean")
+    if market_data.get("sharp_mentions", 0) > 0 and sharp_lean and sharp_lean != "neutral":
+        return sharp_lean
+    sentiment = market_data.get("sentiment")
+    if sentiment is None or sentiment == 0:
+        return None
+    return "over/home" if sentiment > 0 else "under/away"
+
+
+def _score_market(market_data: dict, buzz_accounts: int):
+    """Returns (score, basis). basis 'sharp' can reach A/B; basis
+    'public' (no sharp evidence at all) is capped at C — volume alone
+    should never look like conviction."""
+    signal = market_data.get("signal", "")
+    div = market_data.get("divergence") or 0.0
+    sharp_mentions = market_data.get("sharp_mentions", 0)
+    sentiment = market_data.get("sentiment") or 0.0
+    count = market_data.get("tweet_count", 0)
+
+    has_sharp = (signal in ("fade_public", "follow_sharp")
+                 or buzz_accounts >= 2 or sharp_mentions > 0)
+    if has_sharp:
+        score = 0.0
+        if signal in ("fade_public", "follow_sharp"):
+            score += 40 * min(div / 0.5, 1.0)
+        if buzz_accounts >= 2:
+            score += min(25 + 5 * (buzz_accounts - 2), 35)
+        score += abs(sentiment) * 15
+        score += min(count / 50.0, 1.0) * 10
+        score += min(sharp_mentions, 3) * 4
+        return round(score, 1), "sharp"
+
+    # Public-only: sentiment direction with real volume behind it
+    score = abs(sentiment) * 40 + min(count / 50.0, 1.0) * 20
+    return round(score, 1), "public"
+
+
+def _pick_text(market: str, side: str, game: dict, team_keywords: dict) -> str:
+    home_nick = _nickname(game.get("home", ""), team_keywords)
+    away_nick = _nickname(game.get("away", ""), team_keywords)
+    if market == "total":
+        line = game.get("total")
+        word = "OVER" if side == "over/home" else "UNDER"
+        return f"{word} {line}" if line is not None else f"{word} (no line)"
+    if market == "spread":
+        line = (game.get("spread") or {}).get("line")
+        if side == "over/home":
+            return f"{home_nick} {line:+g}" if line is not None else f"{home_nick} side"
+        return f"{away_nick} {-line:+g}" if line is not None else f"{away_nick} side"
+    # prop market: "<Player> <stat>"
+    word = "OVER" if side == "over/home" else "UNDER"
+    return f"{market} {word}"
+
+
+def _why(market_data: dict, buzz_accounts: int, basis: str = "sharp") -> str:
+    parts = []
+    signal = market_data.get("signal", "")
+    div = market_data.get("divergence")
+    if basis == "public":
+        parts.append("public sentiment only — no sharp read yet")
+    elif signal == "fade_public" and div:
+        parts.append(f"sharp/public split {div:.2f}, fade the public "
+                     f"({market_data.get('public_lean')})")
+    elif signal == "follow_sharp" and div:
+        parts.append(f"sharps on it (divergence {div:.2f})")
+    elif market_data.get("sharp_mentions", 0) > 0:
+        parts.append(f"{market_data['sharp_mentions']} sharp mention(s), aligned")
+    if buzz_accounts >= 2:
+        parts.append(f"{buzz_accounts} sharp accounts active")
+    sentiment = market_data.get("sentiment")
+    if sentiment is not None:
+        parts.append(f"sentiment {sentiment:+.2f}")
+    parts.append(f"{market_data.get('tweet_count', 0)} posts")
+    return "; ".join(parts)
+
+
+def _prop_line(prop_label: str, game: dict) -> str:
+    """Find the odds line for a prop label ('Player stat') in game data."""
+    for prop in game.get("props", []):
+        if f"{prop.get('player')} {prop.get('stat')}" == prop_label:
+            return str(prop.get("line", ""))
+    return ""
+
+
+def _buzz_index(alerts: list) -> dict:
+    """{(game, prop_label): account_count} from BUZZ alerts."""
+    idx = {}
+    for a in alerts:
+        if a.get("type") == "BUZZ":
+            idx[(a.get("game"), a.get("prop"))] = a.get("account_count", 0)
+    return idx
+
+
+def _game_buzz(buzz_idx: dict, game_key: str) -> int:
+    """Game-level buzz: accounts on game_general or 'multiple props'."""
+    return max(buzz_idx.get((game_key, "game_general"), 0),
+               buzz_idx.get((game_key, "_game_general"), 0),
+               buzz_idx.get((game_key, "multiple props"), 0))
+
+
+def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
+                      team_keywords: dict, flip_state: dict = None) -> dict:
+    """Returns {suggestions, flip_watch, flip_triggered, no_edge,
+    news_watch, new_flip_state}."""
+    flip_state = dict(flip_state or {})
+    games = game_data.get("games", {})
+    buzz_idx = _buzz_index(alert_data.get("alerts", []))
+
+    # News context per game (post-dedup INJURY_NEWS alerts)
+    news_by_game = {}
+    for a in alert_data.get("alerts", []):
+        if a.get("type") == "INJURY_NEWS":
+            raw_text = a.get("message", "").split("— ", 1)[-1]
+            snippet = " ".join(w for w in raw_text.split()
+                               if not w.startswith("http"))[:80]
+            news_by_game.setdefault(a.get("game"), []).append(snippet)
+
+    suggestions = []
+    flip_triggered = []
+    no_edge = []
+    date = sentiment_data.get("date", "")
+
+    for game_key, g_sent in sentiment_data.get("games", {}).items():
+        game = games.get(game_key, {})
+        game_had_play = False
+        game_buzz = _game_buzz(buzz_idx, game_key)
+        news = news_by_game.get(game_key, [])
+
+        markets = {}
+        for market in ("spread", "total"):
+            if g_sent.get(market):
+                markets[market] = g_sent[market]
+        # game_general sentiment reinforces the spread read if the spread
+        # bucket itself is thin
+        general = g_sent.get("game_general")
+        if general and "spread" not in markets:
+            markets["spread"] = general
+        for prop_label, prop_data in g_sent.get("props", {}).items():
+            if not prop_label.endswith(" general"):
+                markets[prop_label] = prop_data
+
+        for market, mdata in markets.items():
+            if not mdata or mdata.get("tweet_count", 0) == 0:
+                continue
+            is_prop = market not in ("spread", "total")
+            buzz_accounts = buzz_idx.get((game_key, market), 0)
+            if not is_prop:
+                buzz_accounts = max(buzz_accounts, game_buzz)
+
+            side = _pick_side(mdata)
+            raw = mdata.get("_raw", {})
+            public_sent = raw.get("public_sentiment")
+            sharp_count = mdata.get("sharp_mentions", 0)
+
+            # Public lock -> flip watch, not a play
+            if (public_sent is not None and abs(public_sent) >= PUBLIC_LOCK_THRESHOLD
+                    and sharp_count == 0):
+                key = f"{game_key}|{market}"
+                public_side = "over/home" if public_sent > 0 else "under/away"
+                flip_state[key] = {"date": date, "public_side": public_side,
+                                   "public_sentiment": round(public_sent, 3)}
+                continue
+
+            if side is None:
+                continue
+
+            # Flip trigger: previously public-locked market, sharps now
+            # visibly on the other side
+            key = f"{game_key}|{market}"
+            watched = flip_state.get(key)
+            flipped = bool(watched and sharp_count > 0
+                           and side != watched["public_side"])
+
+            score, basis = _score_market(mdata, buzz_accounts)
+            if flipped:
+                score += 15  # the fade setup completing is the signal
+            confidence = _confidence(score)
+            if basis == "public" and confidence:
+                confidence = "C"
+            if not confidence:
+                continue
+
+            flags = []
+            if basis == "public":
+                flags.append("public-only")
+            if news:
+                flags.append("news")
+                if confidence == "A":
+                    confidence = "B"
+            if flipped:
+                flags.append("flip")
+                flip_state.pop(key, None)
+
+            line = None
+            if market == "total":
+                line = game.get("total")
+            elif market == "spread":
+                line = (game.get("spread") or {}).get("line")
+            else:
+                line = _prop_line(market, game) or None
+
+            entry = {
+                "game": game_key,
+                "market": market,
+                "is_prop": is_prop,
+                "side": side,
+                "line": line,
+                "pick": _pick_text(market, side, game, team_keywords),
+                "score": score,
+                "confidence": confidence,
+                "why": _why(mdata, buzz_accounts, basis),
+                "flags": flags,
+                "news": news[:2],
+                "date": date,
+            }
+            suggestions.append(entry)
+            if flipped:
+                flip_triggered.append(entry)
+            game_had_play = True
+
+        if not game_had_play:
+            no_edge.append(game_key)
+
+    # Expire flip entries from earlier dates (their games are over)
+    flip_state = {k: v for k, v in flip_state.items() if v.get("date") == date}
+
+    suggestions.sort(key=lambda s: s["score"], reverse=True)
+
+    news_watch = []
+    for game_key, items in news_by_game.items():
+        for snippet in items:
+            news_watch.append({"game": game_key, "text": snippet})
+
+    log.info(f"Suggestions: {len(suggestions)} plays "
+             f"({sum(1 for s in suggestions if s['confidence'] == 'A')} A / "
+             f"{sum(1 for s in suggestions if s['confidence'] == 'B')} B / "
+             f"{sum(1 for s in suggestions if s['confidence'] == 'C')} C), "
+             f"{len(no_edge)} no-edge games, "
+             f"{len(flip_state)} on flip watch, {len(flip_triggered)} flips")
+
+    return {
+        "date": date,
+        "generated_at": datetime.now().isoformat(),
+        "suggestions": suggestions,
+        "no_edge": no_edge,
+        "news_watch": news_watch,
+        "flip_watch": sorted(flip_state.keys()),
+        "flip_triggered": [f"{s['game']} {s['pick']}" for s in flip_triggered],
+        "new_flip_state": flip_state,
+    }

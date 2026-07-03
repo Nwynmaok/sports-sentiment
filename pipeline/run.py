@@ -29,12 +29,12 @@ from dotenv import load_dotenv
 
 from core.sport_config import load_sport, available_sports
 from core import queries as q
-from core import matcher, aggregator, alert_builder, sharp_filter
+from core import matcher, aggregator, alert_builder, sharp_filter, suggestions
 from adapters.odds import espn, sportsgameodds
 from adapters.social import reddit, bluesky, twitterapi_io, fourchan, youtube, threads
 from adapters.social import telegram_channels as telegram
 from adapters.social.base import dedupe_posts
-from pipeline import delivery, news_dedup
+from pipeline import delivery, news_dedup, grading
 
 ROOT = Path(__file__).resolve().parent.parent
 log = logging.getLogger("pipeline")
@@ -159,7 +159,7 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) 
     sharp_filter.load_accounts(cfg.accounts)
 
     data_dir = ROOT / "data" / sport
-    for sub in ("queries", "raw", "sentiment", "alerts"):
+    for sub in ("queries", "raw", "sentiment", "alerts", "suggestions", "state"):
         (data_dir / sub).mkdir(parents=True, exist_ok=True)
 
     # Step 1: odds
@@ -202,14 +202,33 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) 
         md = alert_builder.format_alerts_markdown(alert_data)
         with open(data_dir / "alerts" / f"{date}.md", "w") as f:
             f.write(md)
-        print(md)
-    else:
-        print(alert_builder.format_alerts_console(alert_data))
 
+    # Step 5: consolidate into betting suggestions + digest
+    log.info("[5/5] Building suggestions digest")
+    flip_path = data_dir / "state" / "flip_watch.json"
+    flip_state = {}
+    if flip_path.exists():
+        try:
+            with open(flip_path) as f:
+                flip_state = json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+    sug_data = suggestions.build_suggestions(
+        game_data, sentiment_data, alert_data, cfg.team_keywords, flip_state)
+    with open(flip_path, "w") as f:
+        json.dump(sug_data.pop("new_flip_state"), f, indent=1)
+    with open(data_dir / "suggestions" / f"{date}.json", "w") as f:
+        json.dump(sug_data, f, indent=2)
+
+    grading_text = grading.grade_previous(cfg, data_dir, date)
+
+    digest = delivery.format_digest(sug_data, cfg.display_name,
+                                    grading_text, cfg.team_keywords)
+    print(digest)
     if notify:
-        delivery.send_telegram(alert_data)
+        delivery.send_text(digest)
 
-    return alert_data
+    return sug_data
 
 
 def main():
