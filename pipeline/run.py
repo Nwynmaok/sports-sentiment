@@ -34,6 +34,7 @@ from adapters.odds import espn, sportsgameodds
 from adapters.social import reddit, bluesky, twitterapi_io, fourchan, youtube
 from adapters.social import telegram_channels as telegram
 from adapters.social.base import dedupe_posts
+from pipeline import delivery, news_dedup
 
 ROOT = Path(__file__).resolve().parent.parent
 log = logging.getLogger("pipeline")
@@ -142,7 +143,7 @@ def relabel_market_posts(shaped: dict):
                 game_data[market].extend(hits)
 
 
-def run(sport: str, date: str, fmt: str, max_queries: int) -> dict:
+def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) -> dict:
     cfg = load_sport(sport)
     sharp_filter.load_accounts(cfg.accounts)
 
@@ -179,9 +180,10 @@ def run(sport: str, date: str, fmt: str, max_queries: int) -> dict:
     with open(data_dir / "sentiment" / f"{date}.json", "w") as f:
         json.dump(sentiment_data, f, indent=2)
 
-    # Step 4b: alerts
+    # Step 4b: alerts (news alerts deduped in-run + 3-day cooldown)
     log.info("[4/4] Building alerts")
     alert_data = alert_builder.build_alerts(sentiment_data, cfg.display_name)
+    alert_data = news_dedup.filter_news_alerts(alert_data, data_dir / "state")
     with open(data_dir / "alerts" / f"{date}.json", "w") as f:
         json.dump(alert_data, f, indent=2)
 
@@ -192,6 +194,9 @@ def run(sport: str, date: str, fmt: str, max_queries: int) -> dict:
         print(md)
     else:
         print(alert_builder.format_alerts_console(alert_data))
+
+    if notify:
+        delivery.send_telegram(alert_data)
 
     return alert_data
 
@@ -205,6 +210,8 @@ def main():
     parser.add_argument("--format", choices=["console", "markdown"], default="console")
     parser.add_argument("--max-queries", type=int, default=150,
                         help="Cap on targeted social search queries")
+    parser.add_argument("--no-notify", action="store_true",
+                        help="Skip Telegram delivery of the alert digest")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -213,7 +220,8 @@ def main():
         format="%(asctime)s %(name)s %(levelname)s %(message)s",
         datefmt="%H:%M:%S",
     )
-    run(args.sport, args.date, args.format, args.max_queries)
+    run(args.sport, args.date, args.format, args.max_queries,
+        notify=not args.no_notify)
 
 
 if __name__ == "__main__":
