@@ -38,6 +38,18 @@ def aggregate_prop(posts: list, scorer: SentimentScorer) -> dict:
 
     divergence_data = detect_divergence(enriched)
 
+    # Per-account sentiment for sharp-tier accounts, so the suggestion
+    # engine can detect side convergence across accounts
+    sharp_sides = {}
+    for t in enriched:
+        tier = t["_sharp"]["account_tier"]
+        if tier not in ("tracked", "sharp", "analytics"):
+            continue
+        handle = t.get("user", "").lower()
+        if handle:
+            sharp_sides.setdefault(handle, []).append(t["sentiment_score"])
+    sharp_sides = {h: round(sum(v) / len(v), 3) for h, v in sharp_sides.items()}
+
     buckets = filter_posts(enriched)
     tracked = buckets.get("tracked", [])
     sharp = buckets.get("sharp", []) + buckets.get("analytics", [])
@@ -59,6 +71,7 @@ def aggregate_prop(posts: list, scorer: SentimentScorer) -> dict:
         "top_tweets": [_format_post(t) for t in top_all],
         "top_sharp_tweets": [_format_post(t) for t in top_sharp],
         "news_alerts": [_format_post(t) for t in news_posts],
+        "sharp_sides": sharp_sides,
         "_raw": divergence_data,
     }
 

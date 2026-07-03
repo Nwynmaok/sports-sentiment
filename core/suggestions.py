@@ -150,6 +150,37 @@ def _game_buzz(buzz_idx: dict, game_key: str) -> int:
                buzz_idx.get((game_key, "multiple props"), 0))
 
 
+SIDE_LEAN_MIN = 0.1  # an account's avg sentiment must clear this to count
+
+
+def _consensus(mdata: dict, side: str):
+    """Sharp-account side convergence for a market.
+    Returns (aligned_handles, opposed_handles) relative to the pick."""
+    sides = mdata.get("sharp_sides") or {}
+    over = sorted(h for h, s in sides.items() if s >= SIDE_LEAN_MIN)
+    under = sorted(h for h, s in sides.items() if s <= -SIDE_LEAN_MIN)
+    if side == "over/home":
+        return over, under
+    return under, over
+
+
+def _consensus_evidence(aligned: list, opposed: list):
+    """(points, why_bits, flags, aligned) from convergence. Convergence
+    (2+ sharps, same side, none opposed) outranks raw buzz; a split
+    among sharps is a warning, not a signal."""
+    n_a, n_o = len(aligned), len(opposed)
+    if n_a >= 2 and n_o == 0:
+        pts = min(30 + 5 * (n_a - 2), 45)
+        why = [f"{n_a} sharps converging: "
+               + ", ".join("@" + h for h in aligned[:4])]
+        return pts, why, ["consensus"]
+    if n_a >= 1 and n_o >= 1:
+        return -5.0, [f"sharps split ({n_a} with, {n_o} against)"], ["sharps-split"]
+    if n_o >= 2 and n_a == 0:
+        return -15.0, [f"{n_o} sharps on the OTHER side"], ["sharps-against"]
+    return 0.0, [], []
+
+
 def _market_evidence(sig: dict, side: str):
     """Score adjustment + why-text + flags from a prediction-market
     signal for a game-winner-correlated market (the spread).
@@ -377,7 +408,13 @@ def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
             flipped = bool(watched and sharp_count > 0
                            and side != watched["public_side"])
 
-            score, basis = _score_market(mdata, buzz_accounts)
+            # Sharp side-convergence: outranks buzz (which only counts
+            # mentions), so buzz is muted when consensus fires
+            aligned, opposed = _consensus(mdata, side)
+            cons_pts, cons_why, cons_flags = _consensus_evidence(aligned, opposed)
+            score, basis = _score_market(
+                mdata, 0 if "consensus" in cons_flags else buzz_accounts)
+            score = round(score + cons_pts, 1)
             if flipped:
                 score += 15  # the fade setup completing is the signal
 
@@ -399,7 +436,7 @@ def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
             if not confidence:
                 continue
 
-            flags = list(mkt_flags)
+            flags = cons_flags + list(mkt_flags)
             if basis == "public":
                 flags.append("public-only")
             if news:
@@ -427,10 +464,11 @@ def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
                 "pick": _pick_text(market, side, game, team_keywords),
                 "score": score,
                 "confidence": confidence,
-                "why": "; ".join(mkt_why + [_why(mdata, buzz_accounts, basis)])
-                       if mkt_why else _why(mdata, buzz_accounts, basis),
+                "why": "; ".join(cons_why + mkt_why
+                                 + [_why(mdata, buzz_accounts, basis)]),
                 "flags": flags,
                 "basis": basis,
+                "consensus_accounts": aligned if "consensus" in cons_flags else [],
                 "news": news[:2],
                 "date": date,
             }

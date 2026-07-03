@@ -55,8 +55,12 @@ def format_digest(sug_data: dict, sport: str, grading_text: str = None,
             lines.append(f"{CONF_EMOJI.get(best['confidence'], '⚪')} {game_key}")
             for s in sugs:
                 prefix = "  · prop: " if s["is_prop"] else "  "
-                flip = " 🔁" if "flip" in s.get("flags", []) else ""
-                lines.append(f"{prefix}{s['pick']}  [{s['confidence']}]{flip}")
+                marks = ""
+                if "consensus" in s.get("flags", []):
+                    marks += " 🤝"
+                if "flip" in s.get("flags", []):
+                    marks += " 🔁"
+                lines.append(f"{prefix}{s['pick']}  [{s['confidence']}]{marks}")
                 lines.append(f"    {s['why']}")
             for n in best.get("news", []):
                 lines.append(f"    ⚠ {n}")
