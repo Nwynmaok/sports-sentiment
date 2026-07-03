@@ -57,8 +57,10 @@ def fetch_game_data(sport_cfg, date: str, debug_dir: Path = None) -> dict:
 
     data = get_json(
         f"{BASE}/events",
-        params={"leagueID": sport_cfg.sgo_league_id, "startsAfter": date,
-                "startsBefore": date, "oddsAvailable": "true"},
+        params={"leagueID": sport_cfg.sgo_league_id,
+                "startsAfter": f"{date}T00:00:00Z",
+                "startsBefore": f"{date}T23:59:59Z",
+                "oddsAvailable": "true", "limit": 50},
         headers={"X-Api-Key": api_key()},
     )
     if not data or not data.get("success", True) is True and not data.get("data"):
@@ -71,21 +73,30 @@ def fetch_game_data(sport_cfg, date: str, debug_dir: Path = None) -> dict:
         with open(debug_dir / f"sgo_{date}.json", "w") as f:
             json.dump(data, f, indent=1)
 
-    prop_stats = {m.get("key"): m.get("stat", m.get("key"))
-                  for m in sport_cfg.prop_markets}
+    prop_markets = {m.get("key"): m for m in sport_cfg.prop_markets}
+
+    def _american(v):
+        try:
+            return int(str(v).replace("+", ""))
+        except (ValueError, TypeError):
+            return None
+
+    def _num(v):
+        try:
+            return float(v)
+        except (ValueError, TypeError):
+            return None
 
     for ev in events:
         teams = ev.get("teams", {})
-        home = (teams.get("home") or {}).get("names", {}).get("long", "") or \
-               (teams.get("home") or {}).get("name", "")
-        away = (teams.get("away") or {}).get("names", {}).get("long", "") or \
-               (teams.get("away") or {}).get("name", "")
+        home = (teams.get("home") or {}).get("names", {}).get("long", "")
+        away = (teams.get("away") or {}).get("names", {}).get("long", "")
         if not home or not away:
             continue
         game = make_game(away, home, game_time=ev.get("status", {}).get("startsAt", ""))
 
         players = ev.get("players", {}) or {}
-        seen_props = set()
+        props_acc = {}  # (playerID, statID) -> {line, over, under}
 
         for odd_id, odd in (ev.get("odds") or {}).items():
             parts = odd_id.split("-")
@@ -94,41 +105,46 @@ def fetch_game_data(sport_cfg, date: str, debug_dir: Path = None) -> dict:
             stat, entity, period, bet_type, side = parts
             if period != "game":
                 continue
+            price = _american(odd.get("bookOdds") or odd.get("fairOdds"))
 
-            price = odd.get("bookOdds") or odd.get("odds")
-            line = odd.get("bookOverUnder") or odd.get("overUnder") or \
-                odd.get("bookSpread") or odd.get("spread")
+            if stat == "points" and bet_type == "ml" and entity in ("home", "away") \
+                    and side == entity:
+                game[f"{entity}_ml"] = price
+            elif stat == "points" and bet_type == "sp":
+                if entity == "home" and side == "home":
+                    game["spread"]["line"] = _num(
+                        odd.get("bookSpread") or odd.get("fairSpread"))
+                    game["spread_home_odds"] = price
+                elif entity == "away" and side == "away":
+                    game["spread_away_odds"] = price
+            elif stat == "points" and bet_type == "ou" and entity == "all":
+                game["total"] = _num(
+                    odd.get("bookOverUnder") or odd.get("fairOverUnder")) \
+                    or game["total"]
+                game[f"total_{side}_odds"] = price
+            elif bet_type == "ou" and stat in prop_markets \
+                    and entity not in ("home", "away", "all"):
+                rec = props_acc.setdefault((entity, stat), {})
+                rec["line"] = _num(
+                    odd.get("bookOverUnder") or odd.get("fairOverUnder"))
+                rec[side] = price
 
-            if bet_type == "ml" and entity in ("home", "away"):
-                try:
-                    game[f"{entity}_ml"] = int(str(price).replace("+", ""))
-                except (ValueError, TypeError):
-                    pass
-            elif bet_type == "sp" and entity == "home" and side == "home":
-                try:
-                    game["spread"]["line"] = float(line)
-                except (ValueError, TypeError):
-                    pass
-            elif bet_type == "ou" and entity == "all" and side == "over":
-                try:
-                    game["total"] = float(line)
-                except (ValueError, TypeError):
-                    pass
-            elif bet_type == "ou" and entity not in ("home", "away", "all"):
-                # player prop
-                canonical = prop_stats.get(stat, stat)
-                pinfo = players.get(entity, {})
-                pname = pinfo.get("name") or _title_from_entity(entity)
-                key = (pname, canonical)
-                if side == "over" and key not in seen_props:
-                    seen_props.add(key)
-                    game["props"].append({
-                        "player": pname,
-                        "stat": canonical,
-                        "line": line,
-                        "best_over": str(price) if price is not None else "N/A",
-                        "best_under": "N/A",
-                    })
+        for (player_id, stat), rec in props_acc.items():
+            if rec.get("line") is None:
+                continue
+            pinfo = players.get(player_id, {})
+            m = prop_markets[stat]
+            game["props"].append({
+                "player": pinfo.get("name") or _title_from_entity(player_id),
+                "player_id": player_id,
+                "stat": m.get("stat", stat),
+                "stat_key": stat,
+                "line": rec["line"],
+                "over_odds": rec.get("over"),
+                "under_odds": rec.get("under"),
+                "best_over": str(rec.get("over", "N/A")),
+                "best_under": str(rec.get("under", "N/A")),
+            })
 
         matchup = f"{away} @ {home}"
         out["games"][matchup] = game

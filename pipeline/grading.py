@@ -12,8 +12,36 @@ import logging
 from pathlib import Path
 
 from adapters.odds import espn
+from model import player_logs as player_logs_mod
 
 log = logging.getLogger("pipeline.grading")
+
+
+def _grade_prop(s: dict, cfg, plogs, date: str):
+    """Grade a player-prop suggestion from the player's actual stat line
+    that day. Market label format: '<Player Name> <stat>'."""
+    if not plogs:
+        return None
+    market = s.get("market", "")
+    for m in cfg.prop_markets:
+        stat = m.get("stat", "")
+        if not stat or not market.endswith(" " + stat):
+            continue
+        player = market[: -(len(stat) + 1)]
+        val = plogs.stat_on_date(player, m.get("group", "hitting"),
+                                 m.get("statsapi_field", ""), date)
+        if val is None:
+            return None
+        try:
+            line = float(s.get("line"))
+        except (TypeError, ValueError):
+            return None
+        if val == line:
+            return "push"
+        went_over = val > line
+        picked_over = s["side"] == "over/home"
+        return "win" if went_over == picked_over else "loss"
+    return None
 
 
 def _load_json(path: Path, default):
@@ -92,11 +120,16 @@ def grade_previous(cfg, data_dir: Path, today: str):
         return None
 
     scores = {r["matchup"]: r for r in espn.fetch_scores(cfg, date)}
+    season = int(date[:4])
+    plogs = player_logs_mod.open_logs(cfg, data_dir, season=season)
 
     results = []
     wins = losses = pushes = ungraded = 0
     for s in suggestions:
         outcome = _grade_one(s, scores)
+        if outcome is None and s.get("market") not in ("spread", "total",
+                                                       "moneyline"):
+            outcome = _grade_prop(s, cfg, plogs, date)
         if outcome is None:
             ungraded += 1
             continue
@@ -115,6 +148,8 @@ def grade_previous(cfg, data_dir: Path, today: str):
 
     record["graded_dates"] = (record["graded_dates"] + [date])[-30:]
     _save(state_path, record)
+    if plogs:
+        plogs.save()
 
     if not results:
         return None

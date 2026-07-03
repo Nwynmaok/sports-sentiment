@@ -8,29 +8,59 @@
   },
   "prop_markets": [
     {
-      "key": "strikeouts",
+      "key": "pitching_strikeouts",
       "label": "Strikeouts",
-      "stat": "strikeouts"
+      "stat": "strikeouts",
+      "group": "pitching",
+      "statsapi_field": "strikeOuts",
+      "sample_filter": {
+        "field": "gamesStarted",
+        "min": 1
+      }
     },
     {
-      "key": "hits",
+      "key": "batting_hits",
       "label": "Hits",
-      "stat": "hits"
+      "stat": "hits",
+      "group": "hitting",
+      "statsapi_field": "hits",
+      "sample_filter": {
+        "field": "plateAppearances",
+        "min": 2
+      }
     },
     {
-      "key": "homeRuns",
+      "key": "batting_homeRuns",
       "label": "Home Runs",
-      "stat": "home runs"
+      "stat": "home runs",
+      "group": "hitting",
+      "statsapi_field": "homeRuns",
+      "sample_filter": {
+        "field": "plateAppearances",
+        "min": 2
+      }
     },
     {
-      "key": "rbi",
+      "key": "batting_RBI",
       "label": "RBIs",
-      "stat": "rbis"
+      "stat": "rbis",
+      "group": "hitting",
+      "statsapi_field": "rbi",
+      "sample_filter": {
+        "field": "plateAppearances",
+        "min": 2
+      }
     },
     {
-      "key": "totalBases",
+      "key": "batting_totalBases",
       "label": "Total Bases",
-      "stat": "total bases"
+      "stat": "total bases",
+      "group": "hitting",
+      "statsapi_field": "totalBases",
+      "sample_filter": {
+        "field": "plateAppearances",
+        "min": 2
+      }
     }
   ],
   "stat_aliases": {
@@ -129,5 +159,11 @@
     "history_days": 90,
     "min_total_line": 5.5,
     "min_spread_line": 1.0
+  },
+  "player_stats": {
+    "source": "mlb_statsapi",
+    "min_games": 8,
+    "shrink_k": 20,
+    "prop_ev_threshold": 0.05
   }
 }

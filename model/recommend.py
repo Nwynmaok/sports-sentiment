@@ -20,6 +20,8 @@ for caution, not conviction).
 import logging
 
 from . import ev as ev_mod
+from . import player_logs as player_logs_mod
+from . import player_model
 from .team_model import TeamModel
 
 log = logging.getLogger("pipeline.model.recommend")
@@ -55,8 +57,12 @@ def _consider(recs, game_key, market, side, line, p_win, price, why_prefix,
     })
 
 
+MAX_PROP_PRICE = 250  # skip longshot prop prices; EV there is noise
+
+
 def build_recommendations(cfg, history: dict, game_data: dict,
-                          market_signals: dict = None) -> list:
+                          market_signals: dict = None,
+                          data_dir=None) -> list:
     market_signals = market_signals or {}
     mcfg = cfg.raw.get("model", {})
     ev_threshold = mcfg.get("ev_threshold", 0.03)
@@ -94,13 +100,16 @@ def build_recommendations(cfg, history: dict, game_data: dict,
         base_why = (f"model: exp {proj.exp_away:g}-{proj.exp_home:g} "
                     f"(total {proj.exp_total:g}, margin {proj.exp_margin:+g})")
 
-        # Totals (assume -110 both ways)
+        # Totals (real SGO prices when present, else -110)
         if total_line is not None:
             p_over = proj.p_over(total_line + total_bias)
             _consider(recs, game_key, "total", "over/home", total_line,
-                      p_over, DEFAULT_PRICE, base_why, ev_threshold)
+                      p_over, g.get("total_over_odds") or DEFAULT_PRICE,
+                      base_why, ev_threshold)
             _consider(recs, game_key, "total", "under/away", total_line,
-                      round(1 - p_over, 4), DEFAULT_PRICE, base_why, ev_threshold)
+                      round(1 - p_over, 4),
+                      g.get("total_under_odds") or DEFAULT_PRICE,
+                      base_why, ev_threshold)
 
         # Spread (assume -110 both ways); 0.0 placeholders gated the
         # same way (MLB run lines are always +-1.5, never pk)
@@ -111,9 +120,12 @@ def build_recommendations(cfg, history: dict, game_data: dict,
         if spread_line is not None:
             p_cover = proj.p_home_cover(spread_line)
             _consider(recs, game_key, "spread", "over/home", spread_line,
-                      p_cover, DEFAULT_PRICE, base_why, ev_threshold)
+                      p_cover, g.get("spread_home_odds") or DEFAULT_PRICE,
+                      base_why, ev_threshold)
             _consider(recs, game_key, "spread", "under/away", spread_line,
-                      round(1 - p_cover, 4), DEFAULT_PRICE, base_why, ev_threshold)
+                      round(1 - p_cover, 4),
+                      g.get("spread_away_odds") or DEFAULT_PRICE,
+                      base_why, ev_threshold)
 
         # Moneyline (real prices)
         pm_prob = (market_signals.get(game_key) or {}).get("pm_home_prob")
@@ -127,6 +139,54 @@ def build_recommendations(cfg, history: dict, game_data: dict,
             _consider(recs, game_key, "moneyline", "under/away", None,
                       round(1 - proj.p_home_ml, 4), g["away_ml"], base_why,
                       ev_threshold, pm_conflict=conflict)
+
+    # Player props: needs SGO prop lines + a player-log source
+    plogs = player_logs_mod.open_logs(cfg, data_dir) if data_dir else None
+    if plogs:
+        pcfg = cfg.raw.get("player_stats", {})
+        prop_threshold = pcfg.get("prop_ev_threshold", 0.05)
+        markets_by_key = {m["key"]: m for m in cfg.prop_markets}
+        n_props = n_evaluated = 0
+        for game_key, g, proj, _ in slate:
+            for prop in g.get("props", []):
+                m = markets_by_key.get(prop.get("stat_key"))
+                line = prop.get("line")
+                if not m or line is None:
+                    continue
+                n_props += 1
+                over_p, under_p = prop.get("over_odds"), prop.get("under_odds")
+                if all(p is None or abs(p) > MAX_PROP_PRICE
+                       for p in (over_p, under_p)):
+                    continue
+                values = plogs.stat_series(
+                    prop["player"], m["group"], m["statsapi_field"],
+                    sample_filter=m.get("sample_filter"))
+                p_market = None
+                if over_p is not None and under_p is not None:
+                    p_market = player_model.no_vig_prob(
+                        ev_mod.implied_prob(over_p),
+                        ev_mod.implied_prob(under_p))
+                p_over = player_model.prob_over(
+                    values, line, p_market,
+                    pcfg.get("min_games", 8), pcfg.get("shrink_k", 20))
+                if p_over is None:
+                    continue
+                n_evaluated += 1
+                label = f"{prop['player']} {m['stat']}"
+                hit_rate = sum(1 for v in values if v > line) / len(values)
+                why = (f"model: {prop['player']} cleared {line:g} "
+                       f"{m['stat']} in {hit_rate:.0%} of {len(values)} "
+                       f"qualifying games")
+                if over_p is not None and abs(over_p) <= MAX_PROP_PRICE:
+                    _consider(recs, game_key, label, "over/home", line,
+                              p_over, over_p, why, prop_threshold)
+                if under_p is not None and abs(under_p) <= MAX_PROP_PRICE:
+                    _consider(recs, game_key, label, "under/away", line,
+                              round(1 - p_over, 4), under_p, why,
+                              prop_threshold)
+        plogs.save()
+        log.info(f"props: {n_evaluated}/{n_props} evaluated "
+                 f"(sample-size and price gates)")
 
     recs.sort(key=lambda r: r["ev"], reverse=True)
     log.info(f"model recs: {len(recs)} +EV candidates "

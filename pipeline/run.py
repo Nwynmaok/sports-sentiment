@@ -52,12 +52,21 @@ def team_nickname(full_name: str, team_keywords: dict) -> str:
 
 
 def fetch_odds(cfg, date: str, data_dir: Path) -> dict:
-    if sportsgameodds.enabled():
-        game_data = sportsgameodds.fetch_game_data(cfg, date, debug_dir=data_dir / "debug")
-        if game_data["games"]:
-            return game_data
+    espn_data = espn.fetch_game_data(cfg, date)
+    if not sportsgameodds.enabled():
+        return espn_data
+    game_data = sportsgameodds.fetch_game_data(cfg, date, debug_dir=data_dir / "debug")
+    if not game_data["games"]:
         log.warning("SGO returned no games; falling back to ESPN")
-    return espn.fetch_game_data(cfg, date)
+        return espn_data
+    # SGO sometimes lists fewer games than ESPN — fill the gaps so the
+    # slate stays complete (those games just won't have props)
+    missing = [k for k in espn_data["games"] if k not in game_data["games"]]
+    for k in missing:
+        game_data["games"][k] = espn_data["games"][k]
+    if missing:
+        log.info(f"filled {len(missing)} game(s) from ESPN missing in SGO")
+    return game_data
 
 
 def fetch_social(cfg, game_data: dict, max_search_queries: int = 30) -> list:
@@ -187,7 +196,7 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) 
         cfg, data_dir, lookback_days=mcfg.get("history_days", 90),
         end_date=date)
     model_recs = model_recommend.build_recommendations(
-        cfg, history, game_data, market_signals)
+        cfg, history, game_data, market_signals, data_dir=data_dir)
     (data_dir / "model").mkdir(parents=True, exist_ok=True)
     with open(data_dir / "model" / f"{date}.json", "w") as f:
         json.dump(model_recs, f, indent=2)
