@@ -121,5 +121,13 @@
   },
   "kalshi": {
     "series_ticker": "KXMLBGAME"
+  },
+  "model": {
+    "lookback_games": 25,
+    "min_games": 10,
+    "ev_threshold": 0.03,
+    "history_days": 90,
+    "min_total_line": 5.5,
+    "min_spread_line": 1.0
   }
 }

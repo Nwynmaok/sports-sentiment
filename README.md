@@ -10,6 +10,7 @@ The Odds API and Apify dependencies are gone. Sources are now:
 |---|---|---|
 | Odds/lines | ESPN hidden API (keyless) | SportsGameOdds (props, free tier key) |
 | Prediction markets | Polymarket + Kalshi public APIs (keyless) | — |
+| +EV model | Historical results via ESPN (keyless, incremental) | — |
 | Social | Reddit (script app)*, Bluesky (app password), 4chan /sp/ (keyless), YouTube (free key), Telegram channels (free MTProto app), Threads (Meta app, 500 searches/7d) | twitterapi.io (~$0.15/1K tweets) |
 
 \* Reddit requires manual approval since the Nov 2025 Responsible Builder
@@ -36,6 +37,11 @@ adapters/
   markets/polymarket.py    Game-winner probs, keyless (primary PM source)
   markets/kalshi.py        Same via Kalshi public API (opportunistic; thin books)
   markets/signals.py       PM-vs-book edge + intraday steam tracking
+model/
+  ingest.py                Incremental historical results (data/<sport>/stats/)
+  team_model.py            Shrunk off/def ratings, normal totals/margins
+  recommend.py             +EV recs vs slate lines (de-biased, market-humble)
+  ev.py                    EV + fractional Kelly
   social/reddit.py         OAuth script app, read-only
   social/bluesky.py        Public AppView feeds; search needs app password
   social/fourchan.py       /sp/ game threads, keyless (public-tier signal)

@@ -88,6 +88,8 @@ def _score_market(market_data: dict, buzz_accounts: int):
 def _pick_text(market: str, side: str, game: dict, team_keywords: dict) -> str:
     home_nick = _nickname(game.get("home", ""), team_keywords)
     away_nick = _nickname(game.get("away", ""), team_keywords)
+    if market == "moneyline":
+        return f"{home_nick} ML" if side == "over/home" else f"{away_nick} ML"
     if market == "total":
         line = game.get("total")
         word = "OVER" if side == "over/home" else "UNDER"
@@ -217,14 +219,92 @@ def _market_only_play(game_key: str, game: dict, market_signals: dict,
         "confidence": "B" if confidence == "A" else confidence,
         "why": "; ".join(mkt_why) or "prediction-market edge vs books",
         "flags": mkt_flags + ["market-only"],
+        "basis": "market",
         "news": list(news),
         "date": date,
     }
 
 
+def _apply_caps(score: float, basis: str, flags: list):
+    """Confidence from score with basis/news caps applied."""
+    confidence = _confidence(score)
+    if not confidence:
+        return None
+    if basis == "public":
+        return "C"
+    if basis in ("market", "model") and confidence == "A":
+        confidence = "B"
+    if "news" in flags and confidence == "A":
+        confidence = "B"
+    return confidence
+
+
+MAX_MODEL_ONLY_PLAYS = 3
+
+
+def _merge_model_recs(suggestions: list, model_recs: list, games: dict,
+                      news_by_game: dict, team_keywords: dict, date: str):
+    """Model recs either reinforce/contradict existing plays on the same
+    market, or become model-only plays. Model-only plays are capped per
+    slate (a baseline disagreeing with the market everywhere is telling
+    on itself, not finding edges) and never created from pm-conflict
+    recs — the full candidate list stays in data/<sport>/model/."""
+    by_key = {(s["game"], s["market"]): s for s in suggestions}
+    model_only_count = 0
+    for rec in model_recs:
+        key = (rec["game"], rec["market"])
+        existing = by_key.get(key)
+        if existing:
+            if existing["side"] == rec["side"]:
+                existing["score"] = round(existing["score"] + 12, 1)
+                existing["why"] += f"; model agrees (EV {rec['ev']:+.1%})"
+                existing["flags"].append("model")
+            else:
+                existing["score"] = round(existing["score"] - 8, 1)
+                existing["why"] += (f"; model DISAGREES "
+                                    f"(likes {rec['side']}, EV {rec['ev']:+.1%})")
+                existing["flags"].append("model-against")
+            new_conf = _apply_caps(existing["score"],
+                                   existing.get("basis", "sharp"),
+                                   existing["flags"])
+            if new_conf:
+                existing["confidence"] = new_conf
+            continue
+
+        # Model-only play: EV drives the score. +3% -> C, ~+5% -> B.
+        if ("pm-conflict" in rec.get("flags", [])
+                or model_only_count >= MAX_MODEL_ONLY_PLAYS):
+            continue
+        game = games.get(rec["game"], {})
+        score = round(25 + min(rec["ev"] * 300, 20), 1)
+        flags = ["model-only"] + rec.get("flags", [])
+        confidence = _apply_caps(score, "model", flags)
+        if not confidence:
+            continue
+        entry = {
+            "game": rec["game"],
+            "market": rec["market"],
+            "is_prop": rec["market"] not in ("spread", "total", "moneyline"),
+            "side": rec["side"],
+            "line": rec["line"],
+            "pick": _pick_text(rec["market"], rec["side"], game, team_keywords),
+            "score": score,
+            "confidence": confidence,
+            "why": rec["why"],
+            "flags": flags,
+            "basis": "model",
+            "news": news_by_game.get(rec["game"], [])[:2],
+            "date": date,
+        }
+        suggestions.append(entry)
+        by_key[key] = entry
+        model_only_count += 1
+
+
 def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
                       team_keywords: dict, flip_state: dict = None,
-                      market_signals: dict = None) -> dict:
+                      market_signals: dict = None,
+                      model_recs: list = None) -> dict:
     """Returns {suggestions, flip_watch, flip_triggered, no_edge,
     news_watch, new_flip_state}."""
     flip_state = dict(flip_state or {})
@@ -350,6 +430,7 @@ def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
                 "why": "; ".join(mkt_why + [_why(mdata, buzz_accounts, basis)])
                        if mkt_why else _why(mdata, buzz_accounts, basis),
                 "flags": flags,
+                "basis": basis,
                 "news": news[:2],
                 "date": date,
             }
@@ -383,6 +464,13 @@ def build_suggestions(game_data: dict, sentiment_data: dict, alert_data: dict,
             suggestions.append(entry)
         else:
             no_edge.append(game_key)
+
+    # Model +EV recommendations: reinforce, contradict, or add plays
+    if model_recs:
+        _merge_model_recs(suggestions, model_recs, games, news_by_game,
+                          team_keywords, date)
+        with_plays = {s["game"] for s in suggestions}
+        no_edge = [g for g in no_edge if g not in with_plays]
 
     # Expire flip entries from earlier dates (their games are over)
     flip_state = {k: v for k, v in flip_state.items() if v.get("date") == date}

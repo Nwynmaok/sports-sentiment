@@ -34,6 +34,14 @@ def _grade_one(s: dict, scores: dict):
     hs, as_ = game.get("home_score"), game.get("away_score")
     if hs is None or as_ is None:
         return None
+
+    if s["market"] == "moneyline":
+        if hs == as_:
+            return "push"
+        home_won = hs > as_
+        picked_home = s["side"] == "over/home"
+        return "win" if home_won == picked_home else "loss"
+
     line = s.get("line")
     try:
         line = float(line)

@@ -32,6 +32,8 @@ from core import queries as q
 from core import matcher, aggregator, alert_builder, sharp_filter, suggestions
 from adapters.odds import espn, sportsgameodds
 from adapters.markets import signals as prediction_markets
+from model import ingest as model_ingest
+from model import recommend as model_recommend
 from adapters.social import reddit, bluesky, twitterapi_io, fourchan, youtube, threads
 from adapters.social import telegram_channels as telegram
 from adapters.social.base import dedupe_posts
@@ -179,6 +181,17 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) 
     market_signals = prediction_markets.build_signals(
         cfg, date, game_data, data_dir / "state")
 
+    # Step 1c: +EV model recommendations from historical results
+    mcfg = cfg.raw.get("model", {})
+    history = model_ingest.update_history(
+        cfg, data_dir, lookback_days=mcfg.get("history_days", 90),
+        end_date=date)
+    model_recs = model_recommend.build_recommendations(
+        cfg, history, game_data, market_signals)
+    (data_dir / "model").mkdir(parents=True, exist_ok=True)
+    with open(data_dir / "model" / f"{date}.json", "w") as f:
+        json.dump(model_recs, f, indent=2)
+
     # Step 2+3: social posts
     log.info("[2/4] Fetching social posts (reddit/bluesky/twitter)")
     posts = fetch_social(cfg, game_data, max_search_queries=max_queries)
@@ -220,7 +233,7 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) 
             pass
     sug_data = suggestions.build_suggestions(
         game_data, sentiment_data, alert_data, cfg.team_keywords, flip_state,
-        market_signals=market_signals)
+        market_signals=market_signals, model_recs=model_recs)
     with open(flip_path, "w") as f:
         json.dump(sug_data.pop("new_flip_state"), f, indent=1)
     with open(data_dir / "suggestions" / f"{date}.json", "w") as f:
