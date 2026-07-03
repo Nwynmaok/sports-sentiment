@@ -31,7 +31,8 @@ from core.sport_config import load_sport, available_sports
 from core import queries as q
 from core import matcher, aggregator, alert_builder, sharp_filter
 from adapters.odds import espn, sportsgameodds
-from adapters.social import reddit, bluesky, twitterapi_io
+from adapters.social import reddit, bluesky, twitterapi_io, fourchan, youtube
+from adapters.social import telegram_channels as telegram
 from adapters.social.base import dedupe_posts
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -86,6 +87,35 @@ def fetch_social(cfg, game_data: dict, max_search_queries: int = 30) -> list:
                 query, limit=25, source_game=item["game"], source_label=label))
     else:
         log.warning("Bluesky search skipped (no BLUESKY_HANDLE/APP_PASSWORD)")
+
+    # ── YouTube: one picks-video search per game (comments = public) ────
+    if youtube.enabled():
+        for matchup, g in games.items():
+            away_nick = team_nickname(g["away"], cfg.team_keywords)
+            home_nick = team_nickname(g["home"], cfg.team_keywords)
+            posts.extend(youtube.search_game(
+                f"{away_nick} vs {home_nick} {cfg.display_name} picks prediction",
+                source_game=matchup))
+    else:
+        log.info("YouTube source skipped (no YOUTUBE_API_KEY)")
+
+    # ── 4chan boards: game threads matched by team keywords ─────────────
+    if cfg.chan_boards:
+        nicknames = set()
+        for g in games.values():
+            nicknames.add(team_nickname(g["away"], cfg.team_keywords))
+            nicknames.add(team_nickname(g["home"], cfg.team_keywords))
+        keywords = sorted(nicknames) + [cfg.display_name]
+        for board in cfg.chan_boards:
+            posts.extend(fourchan.fetch_board(board, keywords))
+
+    # ── Telegram public channels (capper/picks channels) ────────────────
+    if cfg.telegram_channels:
+        if telegram.enabled():
+            posts.extend(telegram.fetch_channels(cfg.telegram_channels))
+        else:
+            log.warning("Telegram channels configured but source not ready "
+                        "(need TELEGRAM_API_ID/HASH + scripts.telegram_login)")
 
     # ── Twitter (optional, paid): tracked sharp-account timelines ───────
     if twitterapi_io.enabled():
@@ -173,7 +203,7 @@ def main():
                         help=f"Sport pack to run ({', '.join(available_sports())})")
     parser.add_argument("--date", default=datetime.now().strftime("%Y-%m-%d"))
     parser.add_argument("--format", choices=["console", "markdown"], default="console")
-    parser.add_argument("--max-queries", type=int, default=30,
+    parser.add_argument("--max-queries", type=int, default=150,
                         help="Cap on targeted social search queries")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()

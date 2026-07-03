@@ -74,6 +74,16 @@ class SportConfig:
         """Terms appended to Bluesky queries to keep results on-topic."""
         return self.raw.get("bluesky_extra_terms", [])
 
+    @property
+    def telegram_channels(self) -> list:
+        """Public Telegram channel usernames to read."""
+        return self.raw.get("telegram_channels", [])
+
+    @property
+    def chan_boards(self) -> list:
+        """4chan boards to scan (e.g. ["sp"])."""
+        return self.raw.get("chan_boards", [])
+
     # ── sport pack data files ────────────────────────────────────────
     def _load_json(self, name: str, default):
         path = self.dir / name

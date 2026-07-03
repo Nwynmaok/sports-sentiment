@@ -9,7 +9,11 @@ The Odds API and Apify dependencies are gone. Sources are now:
 | Layer | Primary (free) | Optional (paid/keyed) |
 |---|---|---|
 | Odds/lines | ESPN hidden API (keyless) | SportsGameOdds (props, free tier key) |
-| Social | Reddit (free script app) + Bluesky (free app password) | twitterapi.io (~$0.15/1K tweets) |
+| Social | Reddit (script app)*, Bluesky (app password), 4chan /sp/ (keyless), YouTube (free key), Telegram channels (free MTProto app) | twitterapi.io (~$0.15/1K tweets) |
+
+\* Reddit requires manual approval since the Nov 2025 Responsible Builder
+Policy — apply via the Developer Support form; the adapter stays dormant
+until credentials exist.
 
 Every source sits behind an adapter and degrades gracefully when its
 credentials are missing — the pipeline runs with whatever is configured.
@@ -30,7 +34,11 @@ adapters/
   odds/sportsgameodds.py   Lines + player props (SGO_API_KEY)
   social/reddit.py         OAuth script app, read-only
   social/bluesky.py        Public AppView feeds; search needs app password
+  social/fourchan.py       /sp/ game threads, keyless (public-tier signal)
+  social/youtube.py        Picks-video comments (YOUTUBE_API_KEY, free quota)
+  social/telegram_channels.py  Public capper channels via Telethon
   social/twitterapi_io.py  Optional tracked-account timelines + search
+scripts/telegram_login.py  One-time Telegram session setup
 sports/<key>/          Sport packs: config.json (+ players/accounts maps)
 pipeline/run.py        Orchestrator
 ```
@@ -60,6 +68,8 @@ Create `sports/<key>/config.json` with:
 - `prop_markets` + `stat_aliases` — the sport's prop language
 - `team_keywords` — nickname/abbreviation -> full team name
 - `subreddits` — where its betting chatter lives
+- `chan_boards` — 4chan boards to scan (usually `["sp"]`)
+- `telegram_channels` — public channel usernames to read
 
 Optionally add `accounts.json` (tracked sharp/news accounts — Twitter,
 Reddit, or Bluesky handles all work) and `players.json` /

@@ -1,25 +1,77 @@
 {
   "display_name": "MLB",
-  "espn": {"league_path": "baseball/mlb"},
-  "sportsgameodds": {"league_id": "MLB"},
+  "espn": {
+    "league_path": "baseball/mlb"
+  },
+  "sportsgameodds": {
+    "league_id": "MLB"
+  },
   "prop_markets": [
-    {"key": "strikeouts", "label": "Strikeouts", "stat": "strikeouts"},
-    {"key": "hits", "label": "Hits", "stat": "hits"},
-    {"key": "homeRuns", "label": "Home Runs", "stat": "home runs"},
-    {"key": "rbi", "label": "RBIs", "stat": "rbis"},
-    {"key": "totalBases", "label": "Total Bases", "stat": "total bases"}
+    {
+      "key": "strikeouts",
+      "label": "Strikeouts",
+      "stat": "strikeouts"
+    },
+    {
+      "key": "hits",
+      "label": "Hits",
+      "stat": "hits"
+    },
+    {
+      "key": "homeRuns",
+      "label": "Home Runs",
+      "stat": "home runs"
+    },
+    {
+      "key": "rbi",
+      "label": "RBIs",
+      "stat": "rbis"
+    },
+    {
+      "key": "totalBases",
+      "label": "Total Bases",
+      "stat": "total bases"
+    }
   ],
   "stat_aliases": {
-    "strikeouts": ["ks", "k's", "strikeouts", "strike outs", "so"],
-    "hits": ["hits", "hit"],
-    "home runs": ["hr", "homer", "homers", "home run", "home runs", "dinger"],
-    "rbis": ["rbi", "rbis", "runs batted in"],
-    "total bases": ["total bases", "tb"],
-    "runs": ["runs", "run"]
+    "strikeouts": [
+      "ks",
+      "k's",
+      "strikeouts",
+      "strike outs",
+      "so"
+    ],
+    "hits": [
+      "hits",
+      "hit"
+    ],
+    "home runs": [
+      "hr",
+      "homer",
+      "homers",
+      "home run",
+      "home runs",
+      "dinger"
+    ],
+    "rbis": [
+      "rbi",
+      "rbis",
+      "runs batted in"
+    ],
+    "total bases": [
+      "total bases",
+      "tb"
+    ],
+    "runs": [
+      "runs",
+      "run"
+    ]
   },
   "team_keywords": {
-    "Yankees": "New York Yankees", "NYY": "New York Yankees",
-    "Mets": "New York Mets", "NYM": "New York Mets",
+    "Yankees": "New York Yankees",
+    "NYY": "New York Yankees",
+    "Mets": "New York Mets",
+    "NYM": "New York Mets",
     "Red Sox": "Boston Red Sox",
     "Orioles": "Baltimore Orioles",
     "Rays": "Tampa Bay Rays",
@@ -31,24 +83,37 @@
     "Twins": "Minnesota Twins",
     "Astros": "Houston Astros",
     "Angels": "Los Angeles Angels",
-    "Athletics": "Athletics", "A's": "Athletics",
+    "Athletics": "Athletics",
+    "A's": "Athletics",
     "Mariners": "Seattle Mariners",
     "Rangers": "Texas Rangers",
     "Braves": "Atlanta Braves",
     "Marlins": "Miami Marlins",
     "Phillies": "Philadelphia Phillies",
-    "Nationals": "Washington Nationals", "Nats": "Washington Nationals",
+    "Nationals": "Washington Nationals",
+    "Nats": "Washington Nationals",
     "Cubs": "Chicago Cubs",
     "Reds": "Cincinnati Reds",
     "Brewers": "Milwaukee Brewers",
     "Pirates": "Pittsburgh Pirates",
-    "Cardinals": "St. Louis Cardinals", "Cards": "St. Louis Cardinals",
-    "Diamondbacks": "Arizona Diamondbacks", "Dbacks": "Arizona Diamondbacks", "D-backs": "Arizona Diamondbacks",
+    "Cardinals": "St. Louis Cardinals",
+    "Cards": "St. Louis Cardinals",
+    "Diamondbacks": "Arizona Diamondbacks",
+    "Dbacks": "Arizona Diamondbacks",
+    "D-backs": "Arizona Diamondbacks",
     "Rockies": "Colorado Rockies",
     "Dodgers": "Los Angeles Dodgers",
     "Padres": "San Diego Padres",
     "Giants": "San Francisco Giants"
   },
-  "subreddits": ["sportsbook", "baseball", "sportsbetting"],
-  "bluesky_extra_terms": []
+  "subreddits": [
+    "sportsbook",
+    "baseball",
+    "sportsbetting"
+  ],
+  "bluesky_extra_terms": [],
+  "telegram_channels": [],
+  "chan_boards": [
+    "sp"
+  ]
 }
