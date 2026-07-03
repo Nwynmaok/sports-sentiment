@@ -32,11 +32,16 @@ _token = {"value": None, "expires": 0.0}
 
 
 def enabled() -> bool:
-    return bool(os.environ.get("REDDIT_CLIENT_ID") and os.environ.get("REDDIT_CLIENT_SECRET"))
+    cid = os.environ.get("REDDIT_CLIENT_ID", "")
+    secret = os.environ.get("REDDIT_CLIENT_SECRET", "")
+    # template placeholders don't count as configured
+    return bool(cid and secret and not cid.startswith("your_"))
 
 
 def _get_token():
-    if _token["value"] and time.time() < _token["expires"] - 60:
+    # covers both a live token and the negative-cache window after a
+    # failed auth (value None, expires in the future)
+    if time.time() < _token["expires"] - 60:
         return _token["value"]
     if not enabled():
         return None
@@ -55,6 +60,10 @@ def _get_token():
         return _token["value"]
     except (requests.RequestException, KeyError) as e:
         log.error(f"Reddit OAuth failed: {e}")
+        # negative-cache so one bad credential doesn't retry on every
+        # call in the same run
+        _token["value"] = None
+        _token["expires"] = time.time() + 360
         return None
 
 
