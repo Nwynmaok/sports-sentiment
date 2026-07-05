@@ -4,6 +4,10 @@ Multi-sport port of the nba-sentiment pipeline. Pulls the day's slate and
 betting lines, scrapes social chatter about each game/prop, scores sentiment
 against sharp/public account classifications, and generates actionable alerts.
 
+**Docs:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — system flow,
+the scoring model (signals, ceilings, penalties), the +EV model,
+the daily schedule, grading, and data layout.
+
 The Odds API and Apify dependencies are gone. Sources are now:
 
 | Layer | Primary (free) | Optional (paid/keyed) |
