@@ -19,9 +19,10 @@ def make_post(id="", user="", user_display="", user_followers=0,
               user_verified=False, text="", published="", likes=0,
               reposts=0, replies=0, views=0, url="", source="",
               source_query="", source_type="search", source_game=None,
-              source_label=None, lang="") -> dict:
+              source_label=None, lang="", media=None) -> dict:
     return {
         "id": id,
+        "media": media or [],
         "user": user,
         "user_display": user_display,
         "user_followers": user_followers,

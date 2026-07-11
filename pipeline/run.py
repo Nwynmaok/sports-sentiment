@@ -30,6 +30,7 @@ from dotenv import load_dotenv
 from core.sport_config import load_sport, available_sports
 from core import queries as q
 from core import matcher, aggregator, alert_builder, sharp_filter, suggestions
+from core import pick_extractor
 from adapters.odds import espn, sportsgameodds
 from adapters.markets import signals as prediction_markets
 from model import ingest as model_ingest
@@ -205,6 +206,11 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) 
     log.info("[2/4] Fetching social posts (reddit/bluesky/twitter)")
     posts = fetch_social(cfg, game_data, max_search_queries=max_queries)
     log.info(f"      {len(posts)} unique posts")
+
+    # Step 3b: sharps often post their card as an image/video rather than
+    # text — transcribe attached media into post text so matching and
+    # sentiment see those picks too.
+    pick_extractor.extract_media_picks(posts, data_dir / "state")
 
     # Step 4a: match posts to games/props
     log.info("[3/4] Matching + aggregating")

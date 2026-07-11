@@ -100,17 +100,19 @@ prices within +-250. All thresholds live in the sport config.
 
 ## Daily lifecycle
 
-A macOS LaunchAgent
-(`~/Library/LaunchAgents/com.wynclaw.sports-sentiment.mlb.plist`) runs
-the pipeline at **9:00** and **16:00**; if the machine is asleep at the
-scheduled time, launchd runs it on wake. Logs:
-`logs/mlb-launchd.log`.
+Per-sport macOS LaunchAgents
+(`~/Library/LaunchAgents/com.wynclaw.sports-sentiment.<sport>.plist`) run
+the pipeline daily — MLB at **9:00** and **16:00**, WNBA at **9:15** and
+**16:15**; if the machine is asleep at the scheduled time, launchd runs
+it on wake. Logs: `logs/<sport>-launchd.log`.
 
 Each run (`python3 -m pipeline.run --sport mlb`):
 
 1. Slate + lines + props (SGO, ESPN fill)
 2. Prediction-market signals; +EV model (history updates incrementally)
-3. Social fetch across configured sources; posts matched to games/props
+3. Social fetch across configured sources; tracked-account media
+   transcribed into post text (`core/pick_extractor.py`, codex vision);
+   posts matched to games/props
 4. Sentiment aggregation -> alerts (news deduped, 3-day cooldown)
 5. Suggestion engine -> `data/<sport>/suggestions/<date>.json` ->
    Telegram digest

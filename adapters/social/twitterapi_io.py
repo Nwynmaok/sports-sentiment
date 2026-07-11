@@ -28,6 +28,33 @@ def enabled() -> bool:
     return bool(api_key())
 
 
+def _media_from_tweet(t: dict) -> list:
+    """Normalize attached media. Sharps often post their card as an image
+    (or a video scrolling through picks); the analysis layer runs vision
+    extraction on these, so capture photo URLs, video preview frames, and
+    the best mp4 variant. Media schema: {type, image_url, video_url}."""
+    entries = ((t.get("extendedEntities") or t.get("extended_entities") or {})
+               .get("media")
+               or (t.get("entities") or {}).get("media")
+               or t.get("media") or [])
+    out = []
+    for m in entries:
+        if not isinstance(m, dict):
+            continue
+        mtype = m.get("type", "photo")
+        image = (m.get("media_url_https") or m.get("media_url")
+                 or m.get("url_https") or "")
+        video = ""
+        variants = (m.get("video_info") or {}).get("variants") or m.get("variants") or []
+        mp4s = [v for v in variants
+                if isinstance(v, dict) and "mp4" in (v.get("content_type") or v.get("contentType") or "")]
+        if mp4s:
+            video = max(mp4s, key=lambda v: v.get("bitrate", 0) or 0).get("url", "")
+        if image or video:
+            out.append({"type": mtype, "image_url": image, "video_url": video})
+    return out
+
+
 def _post_from_tweet(t: dict, source_query="", source_type="search",
                      source_game=None, source_label=None) -> dict:
     author = t.get("author", {}) or {}
@@ -50,6 +77,7 @@ def _post_from_tweet(t: dict, source_query="", source_type="search",
         source_game=source_game,
         source_label=source_label,
         lang=t.get("lang", ""),
+        media=_media_from_tweet(t),
     )
 
 
