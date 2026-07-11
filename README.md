@@ -57,7 +57,10 @@ model/
   social/twitterapi_io.py  Optional tracked-account timelines + search
 scripts/telegram_login.py  One-time Telegram session setup
 sports/<key>/          Sport packs: config.json (+ players/accounts maps)
-pipeline/run.py        Orchestrator
+pipeline/run.py        Orchestrator (one full analysis pass)
+pipeline/dispatch.py   Game-anchored scheduler (launchd, every 15 min):
+pipeline/cluster.py      clusters the slate's start times, fires run.py
+                         at T-75 min per cluster + a 9:00 planning run
 ```
 
 ## Setup

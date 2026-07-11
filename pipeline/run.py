@@ -22,7 +22,7 @@ import os
 import json
 import logging
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -37,7 +37,9 @@ from model import ingest as model_ingest
 from model import recommend as model_recommend
 from adapters.social import reddit, bluesky, twitterapi_io, fourchan, youtube, threads
 from adapters.social import telegram_channels as telegram
+from adapters.social import timeline_cache
 from adapters.social.base import dedupe_posts
+from pipeline.cluster import parse_game_time
 from pipeline import delivery, news_dedup, grading
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -142,12 +144,14 @@ def fetch_social(cfg, game_data: dict, max_search_queries: int = 30) -> list:
             log.warning("Telegram channels configured but source not ready "
                         "(need TELEGRAM_API_ID/HASH + scripts.telegram_login)")
 
-    # ── Twitter (optional, paid): tracked sharp-account timelines ───────
+    # ── Twitter (optional, paid): tracked sharp-account timelines.
+    # Served through the shared cross-sport cache: same-window runs of
+    # different sports pay for Twitter once, and intraday re-fetches pull
+    # incrementally (adapters/social/timeline_cache.py).
     if twitterapi_io.enabled():
         tracked = [e.get("handle") for e in cfg.accounts.get("tracked", [])]
-        for handle in tracked:
-            if handle:
-                posts.extend(twitterapi_io.fetch_timeline(handle, limit=20))
+        posts.extend(timeline_cache.fetch_timelines(
+            tracked, ROOT / "data" / "_shared" / "timeline_cache.json"))
     else:
         log.info("Twitter source skipped (no TWITTERAPI_IO_KEY)")
 
@@ -167,7 +171,26 @@ def relabel_market_posts(shaped: dict):
                 game_data[market].extend(hits)
 
 
-def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) -> dict:
+def filter_games_to_window(game_data: dict, window_start: str,
+                           window_end: str, display_name: str) -> dict:
+    """Keep only games tipping inside [window_start, window_end] (local
+    ISO, ±15 min tolerance for line-time drift). Games with unparseable
+    times are kept rather than silently dropped."""
+    ws = datetime.fromisoformat(window_start) - timedelta(minutes=15)
+    we = datetime.fromisoformat(window_end) + timedelta(minutes=15)
+    keep = {}
+    for key, game in game_data["games"].items():
+        tip = parse_game_time(game.get("game_time", ""))
+        if tip is None or ws <= tip <= we:
+            keep[key] = game
+    log.info(f"      window {window_start}..{window_end}: "
+             f"{len(keep)}/{len(game_data['games'])} {display_name} games")
+    game_data["games"] = keep
+    return game_data
+
+
+def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True,
+        window_start: str = None, window_end: str = None) -> dict:
     cfg = load_sport(sport)
     sharp_filter.load_accounts(cfg.accounts)
 
@@ -183,6 +206,14 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True) 
     if not game_data["games"]:
         log.warning(f"No {cfg.display_name} games on {date} — nothing to do")
         return {}
+    # Cluster runs analyze only their window's games. The full slate was
+    # already persisted to queries/ above, so nothing is lost.
+    if window_start and window_end:
+        game_data = filter_games_to_window(game_data, window_start,
+                                           window_end, cfg.display_name)
+        if not game_data["games"]:
+            log.warning("No games in this run window — nothing to do")
+            return {}
     log.info(f"      {len(game_data['games'])} games "
              f"({sum(len(g['props']) for g in game_data['games'].values())} props) "
              f"via {game_data['source']}")
@@ -276,6 +307,12 @@ def main():
                         help="Cap on targeted social search queries")
     parser.add_argument("--no-notify", action="store_true",
                         help="Skip Telegram delivery of the alert digest")
+    parser.add_argument("--window-start",
+                        help="Local ISO time: only analyze games tipping "
+                             "from here (set by pipeline.dispatch)")
+    parser.add_argument("--window-end",
+                        help="Local ISO time: only analyze games tipping "
+                             "up to here (set by pipeline.dispatch)")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
@@ -285,7 +322,8 @@ def main():
         datefmt="%H:%M:%S",
     )
     run(args.sport, args.date, args.format, args.max_queries,
-        notify=not args.no_notify)
+        notify=not args.no_notify,
+        window_start=args.window_start, window_end=args.window_end)
 
 
 if __name__ == "__main__":

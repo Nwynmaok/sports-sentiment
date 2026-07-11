@@ -139,5 +139,11 @@
     "history_days": 150,
     "min_total_line": 25,
     "min_spread_line": 0.5
+  },
+  "schedule": {
+    "enabled": false,
+    "gap_minutes": 90,
+    "max_cluster_runs": 3,
+    "lead_minutes": 75
   }
 }

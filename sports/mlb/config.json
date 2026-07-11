@@ -165,5 +165,11 @@
     "min_games": 8,
     "shrink_k": 20,
     "prop_ev_threshold": 0.05
+  },
+  "schedule": {
+    "enabled": true,
+    "gap_minutes": 90,
+    "max_cluster_runs": 3,
+    "lead_minutes": 75
   }
 }

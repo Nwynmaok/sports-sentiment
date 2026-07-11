@@ -100,11 +100,21 @@ prices within +-250. All thresholds live in the sport config.
 
 ## Daily lifecycle
 
-Per-sport macOS LaunchAgents
-(`~/Library/LaunchAgents/com.wynclaw.sports-sentiment.<sport>.plist`) run
-the pipeline daily — MLB at **9:00** and **16:00**, WNBA at **9:15** and
-**16:15**; if the machine is asleep at the scheduled time, launchd runs
-it on wake. Logs: `logs/<sport>-launchd.log`.
+Runs are **game-anchored**, not fixed-time. A single LaunchAgent
+(`com.wynclaw.sports-sentiment.dispatch`) ticks `pipeline/dispatch.py`
+every 15 minutes. On the first tick at/after 07:30 local it fetches each
+scheduled sport's slate (ESPN, keyless) and builds the day's schedule
+(`data/<sport>/state/run_schedule_<date>.json`): one **morning** planning
+run at 09:00 over the full slate, plus one windowed run per start-time
+cluster at **T-75 minutes** before that cluster's first tip
+(`pipeline/cluster.py`; per-sport `schedule` block in config.json sets
+gap/cap/lead). ESPN's UTC game times are converted to local wall-clock,
+DST-safe. Sports fire sequentially, so coinciding cluster runs share the
+Twitter timeline cache (`adapters/social/timeline_cache.py`: 45-min TTL
+across sports, first fetch of the day pulls 20 tweets/handle, intraday
+re-fetches pull 10 and merge by id). If the machine is asleep, overdue
+runs catch up on wake; runs whose whole window is 15+ minutes past tip
+are marked `missed` instead. Logs: `logs/dispatch-launchd.log`.
 
 Each run (`python3 -m pipeline.run --sport mlb`):
 
