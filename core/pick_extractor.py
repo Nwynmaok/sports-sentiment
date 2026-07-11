@@ -5,9 +5,11 @@ posts. Sharps increasingly post their card as an image (or a video that
 scrolls through picks) with little or no text in the tweet body — text-only
 analysis misses those entirely.
 
-Approach: download attached images (photos, plus the preview frame of
-videos — full video frame sampling needs ffmpeg, not installed), hand them
-to `codex exec -i` (already authenticated on this machine; same CLI
+Approach: download attached images (photos; for videos, sample up to
+MAX_VIDEO_FRAMES evenly spaced frames with ffmpeg — sharps' pick videos
+scroll through a card, so one preview frame misses most of it; if ffmpeg
+is unavailable the preview frame is the fallback), hand them to
+`codex exec -i` (already authenticated on this machine; same CLI
 market-digests uses for its Tier 2 LLM) and get back a plain-text
 transcription of the picks. The transcript is appended to the post's
 `text` field, so the existing matcher / sentiment / sharp-weighting layers
@@ -34,8 +36,11 @@ log = logging.getLogger("pipeline.pick_extractor")
 
 NO_PICKS = "NO_PICKS"
 MAX_IMAGES_PER_POST = 2
+MAX_VIDEO_FRAMES = 4
+MAX_VIDEO_BYTES = 60 * 1024 * 1024
 DEFAULT_IMAGE_BUDGET = 25
 CODEX_TIMEOUT_S = 180
+FFMPEG_TIMEOUT_S = 120
 CACHE_MAX_ENTRIES = 800
 MARKER = "[media picks]"
 
@@ -68,6 +73,51 @@ def _download(url: str, dest_dir: Path, name: str) -> Path:
     path = dest_dir / f"{name}{suffix}"
     path.write_bytes(r.content)
     return path
+
+
+def _video_frames(video_url: str, dest_dir: Path,
+                  max_frames: int = MAX_VIDEO_FRAMES) -> list:
+    """Download a pick video and sample up to max_frames evenly spaced
+    frames. Returns [] on any failure (caller falls back to the video's
+    preview image)."""
+    if not shutil.which("ffmpeg") or not shutil.which("ffprobe"):
+        return []
+    video_path = dest_dir / "video.mp4"
+    try:
+        with requests.get(video_url, timeout=60, stream=True) as r:
+            r.raise_for_status()
+            size = 0
+            with open(video_path, "wb") as f:
+                for chunk in r.iter_content(1 << 16):
+                    size += len(chunk)
+                    if size > MAX_VIDEO_BYTES:
+                        log.warning(f"video too large, skipping: {video_url}")
+                        return []
+                    f.write(chunk)
+        probe = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-show_entries", "format=duration",
+             "-of", "csv=p=0", str(video_path)],
+            capture_output=True, timeout=FFMPEG_TIMEOUT_S)
+        duration = float(probe.stdout.decode().strip())
+        # Even spacing that always includes an early frame; a 12s card
+        # scroll yields frames at ~1.5s, 4.5s, 7.5s, 10.5s.
+        step = max(duration / max_frames, 0.5)
+        proc = subprocess.run(
+            ["ffmpeg", "-v", "quiet", "-i", str(video_path),
+             "-vf", f"fps=1/{step:.3f}", "-frames:v", str(max_frames),
+             str(dest_dir / "frame%d.jpg")],
+            capture_output=True, timeout=FFMPEG_TIMEOUT_S)
+        if proc.returncode != 0:
+            return []
+        return sorted(dest_dir.glob("frame*.jpg"))
+    except Exception as e:
+        log.warning(f"video frame sampling failed {video_url}: {e}")
+        return []
+    finally:
+        try:
+            video_path.unlink()
+        except OSError:
+            pass
 
 
 def _transcribe(image_paths: list) -> str:
@@ -142,20 +192,23 @@ def extract_media_picks(posts: list, state_dir,
         else:
             if spent >= image_budget:
                 continue
-            urls = []
-            for m in post["media"][:MAX_IMAGES_PER_POST]:
-                if m.get("image_url"):
-                    urls.append(m["image_url"])
-            if not urls:
-                continue
             tmpdir = Path(tempfile.mkdtemp(prefix="pick-media-"))
             try:
                 paths = []
-                for i, u in enumerate(urls):
-                    try:
-                        paths.append(_download(u, tmpdir, f"media{i}"))
-                    except Exception as e:
-                        log.warning(f"media download failed {u}: {e}")
+                for i, m in enumerate(post["media"][:MAX_IMAGES_PER_POST]):
+                    if len(paths) >= MAX_VIDEO_FRAMES:
+                        break
+                    if m.get("video_url"):
+                        frames = _video_frames(m["video_url"], tmpdir)
+                        if frames:
+                            paths.extend(frames[:MAX_VIDEO_FRAMES - len(paths)])
+                            continue
+                        # fall back to the preview frame below
+                    if m.get("image_url"):
+                        try:
+                            paths.append(_download(m["image_url"], tmpdir, f"media{i}"))
+                        except Exception as e:
+                            log.warning(f"media download failed {m['image_url']}: {e}")
                 if not paths:
                     continue
                 spent += len(paths)
