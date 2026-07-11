@@ -30,13 +30,26 @@ def match_post_to_games(text: str, games: dict, team_keywords: dict) -> list:
     return matched_games
 
 
+def player_match_terms(player: str) -> list:
+    """Forms of the name that count as a mention: the full name and
+    'F. Lastname'. Bare surnames are NOT enough — with 35 capper
+    timelines in play, matching on 'williams' alone attributed a Gavin
+    Williams (pitcher) card and a Courtney Williams (WNBA) parlay to an
+    Alika Williams total-bases prop as 'sharp convergence'."""
+    name = " ".join(player.split()).lower()
+    tokens = name.split()
+    terms = [name]
+    if len(tokens) >= 2:
+        terms.append("{}. {}".format(tokens[0][0], " ".join(tokens[1:])))
+    return terms
+
+
 def match_post_to_props(text: str, player_games: dict, stat_aliases: dict) -> list:
     """Return (game_key, prop_label) pairs for players mentioned in the text."""
-    text_lower = text.lower()
+    text_lower = " ".join(text.lower().split())
     matches = []
     for player, props in player_games.items():
-        last_name = player.split()[-1].lower()
-        if last_name not in text_lower:
+        if not any(term in text_lower for term in player_match_terms(player)):
             continue
         for prop in props:
             stat = prop["stat"]

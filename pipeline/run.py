@@ -38,7 +38,7 @@ from model import recommend as model_recommend
 from adapters.social import reddit, bluesky, twitterapi_io, fourchan, youtube, threads
 from adapters.social import telegram_channels as telegram
 from adapters.social import timeline_cache
-from adapters.social.base import dedupe_posts
+from adapters.social.base import dedupe_posts, filter_stale_posts
 from pipeline.cluster import parse_game_time
 from pipeline import delivery, news_dedup, grading
 
@@ -237,6 +237,10 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True,
     log.info("[2/4] Fetching social posts (reddit/bluesky/twitter)")
     posts = fetch_social(cfg, game_data, max_search_queries=max_queries)
     log.info(f"      {len(posts)} unique posts")
+
+    # Step 3a: recency gate BEFORE vision extraction, so codex calls are
+    # never spent on week-old timeline posts about finished games.
+    posts = filter_stale_posts(posts)
 
     # Step 3b: sharps often post their card as an image/video rather than
     # text — transcribe attached media into post text so matching and
