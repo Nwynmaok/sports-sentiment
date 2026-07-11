@@ -1,8 +1,183 @@
 {
-  "_last_updated": "2026-07-03",
-  "_note": "Tiers: tracked (highest weight sharps), sharp (proven bettors), analytics (data-driven analysts), news (injury/lineup breakers). Weight 0.0-1.0 determines signal strength in aggregator. Handles are matched case-insensitively across every source — Twitter usernames, Reddit usernames, Bluesky handles, Telegram channel names, YouTube channel names.",
-
-  "tracked": [],
+  "_last_updated": "2026-07-11",
+  "_note": "Tiers: tracked (highest weight sharps; ONLY tier whose Twitter timelines are fetched via twitterapi.io), sharp (proven bettors), analytics (data-driven analysts), news (injury/lineup breakers). Weight 0.0-1.0 determines signal strength in aggregator. Handles are matched case-insensitively across every source \u2014 Twitter usernames, Reddit usernames, Bluesky handles, Telegram channel names, YouTube channel names.",
+  "tracked": [
+    {
+      "handle": "VikingsLocks",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "AnalyticsPicks",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "TCTone",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "EVBettors",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "a1fantasy23",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "thejoeholkashow",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "betbigben",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "CallingOurShot",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "AlexCaruso",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "TheRowdyRhymes",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "FuckParlays",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "BrickPicksLicks",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "dnrsportsdan",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "PropBomb",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "PlusEV",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "icemanlocks",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "BookitWithTrent",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "OutlawParlays",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "CodyBrownBets",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "HarryLockPicks",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "KingPropz",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "Arcbets_",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "clarkknowsball",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "salbets_",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "ThePicksPro",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "772_Bets",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "Baloneslocks",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "LegitSoccerBets",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "invisiblestats",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "kiwiparlays",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "PropFarmHQ",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "PrizePicksPusha",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "billhpicks",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "lockedinpickz",
+      "weight": 1.0,
+      "tags": []
+    },
+    {
+      "handle": "ActionAdvisors_",
+      "weight": 1.0,
+      "tags": []
+    }
+  ],
   "sharp": [],
   "analytics": [],
   "news": []

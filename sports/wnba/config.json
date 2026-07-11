@@ -1,0 +1,139 @@
+{
+  "display_name": "WNBA",
+  "espn": {
+    "league_path": "basketball/wnba"
+  },
+  "sportsgameodds": {
+    "league_id": "WNBA"
+  },
+  "prop_markets": [
+    {
+      "key": "points",
+      "label": "Points",
+      "stat": "points"
+    },
+    {
+      "key": "rebounds",
+      "label": "Rebounds",
+      "stat": "rebounds"
+    },
+    {
+      "key": "assists",
+      "label": "Assists",
+      "stat": "assists"
+    },
+    {
+      "key": "threes",
+      "label": "3-Pointers",
+      "stat": "threes"
+    },
+    {
+      "key": "blocks",
+      "label": "Blocks",
+      "stat": "blocks"
+    },
+    {
+      "key": "steals",
+      "label": "Steals",
+      "stat": "steals"
+    }
+  ],
+  "stat_aliases": {
+    "points": [
+      "pts",
+      "points",
+      "point",
+      "scoring"
+    ],
+    "assists": [
+      "ast",
+      "assists",
+      "assist",
+      "asts",
+      "dimes"
+    ],
+    "rebounds": [
+      "reb",
+      "rebounds",
+      "rebound",
+      "rebs",
+      "boards"
+    ],
+    "pra": [
+      "pra",
+      "pts+reb+ast",
+      "points rebounds assists"
+    ],
+    "threes": [
+      "3pm",
+      "three pointers",
+      "threes",
+      "3-pointers",
+      "3pt",
+      "triples",
+      "3s"
+    ],
+    "steals": [
+      "stl",
+      "steals",
+      "stls"
+    ],
+    "blocks": [
+      "blk",
+      "blocks",
+      "blks"
+    ]
+  },
+  "team_keywords": {
+    "Dream": "Atlanta Dream",
+    "Atlanta": "Atlanta Dream",
+    "Sky": "Chicago Sky",
+    "Sun": "Connecticut Sun",
+    "Connecticut": "Connecticut Sun",
+    "Wings": "Dallas Wings",
+    "Valkyries": "Golden State Valkyries",
+    "Golden State": "Golden State Valkyries",
+    "Fever": "Indiana Fever",
+    "Indiana": "Indiana Fever",
+    "Aces": "Las Vegas Aces",
+    "Las Vegas": "Las Vegas Aces",
+    "Sparks": "Los Angeles Sparks",
+    "Lynx": "Minnesota Lynx",
+    "Minnesota": "Minnesota Lynx",
+    "Liberty": "New York Liberty",
+    "Mercury": "Phoenix Mercury",
+    "Fire": "Portland Fire",
+    "Portland": "Portland Fire",
+    "Storm": "Seattle Storm",
+    "Seattle": "Seattle Storm",
+    "Tempo": "Toronto Tempo",
+    "Toronto": "Toronto Tempo",
+    "Mystics": "Washington Mystics"
+  },
+  "subreddits": [
+    "wnba",
+    "sportsbook",
+    "sportsbetting"
+  ],
+  "bluesky_extra_terms": [
+    "WNBA"
+  ],
+  "telegram_channels": [],
+  "chan_boards": [
+    "sp"
+  ],
+  "polymarket": {
+    "tag_slug": "wnba"
+  },
+  "kalshi": {
+    "series_ticker": "KXWNBAGAME"
+  },
+  "model": {
+    "lookback_games": 25,
+    "min_games": 10,
+    "ev_threshold": 0.03,
+    "history_days": 90,
+    "min_total_line": 120,
+    "min_spread_line": 0.5
+  }
+}
