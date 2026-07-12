@@ -142,7 +142,11 @@
     "sportsbetting"
   ],
   "bluesky_extra_terms": [],
-  "telegram_channels": [],
+  "telegram_channels": [
+    "picksnparleys",
+    "baseballpredicts",
+    "CraigKPP"
+  ],
   "chan_boards": [
     "sp"
   ],

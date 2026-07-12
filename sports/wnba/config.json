@@ -118,7 +118,10 @@
   "bluesky_extra_terms": [
     "WNBA"
   ],
-  "telegram_channels": [],
+  "telegram_channels": [
+    "picksnparleys",
+    "CraigKPP"
+  ],
   "chan_boards": [
     "sp"
   ],
