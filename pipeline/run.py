@@ -6,7 +6,9 @@ Usage:
     python3 -m pipeline.run --sport nba --date 2026-10-25 --format markdown
 
 Steps:
-    1. Odds: SportsGameOdds (props, if SGO_API_KEY) else ESPN (lines, keyless)
+    1. Odds: SportsGameOdds (props, if SGO_API_KEY) else ESPN (lines,
+       keyless); propless games then filled from Bovada -> Underdog
+       (both keyless, per-sport config blocks)
     2. Build social search queries from the slate
     3. Fetch posts: Reddit + Bluesky (free) + twitterapi.io (optional)
     4. Match posts to games/props, aggregate sentiment, build alerts
@@ -31,7 +33,7 @@ from core.sport_config import load_sport, available_sports
 from core import queries as q
 from core import matcher, aggregator, alert_builder, sharp_filter, suggestions
 from core import pick_extractor
-from adapters.odds import espn, sportsgameodds
+from adapters.odds import espn, sportsgameodds, bovada, underdog
 from adapters.markets import signals as prediction_markets
 from model import ingest as model_ingest
 from model import recommend as model_recommend
@@ -56,19 +58,34 @@ def team_nickname(full_name: str, team_keywords: dict) -> str:
 
 def fetch_odds(cfg, date: str, data_dir: Path) -> dict:
     espn_data = espn.fetch_game_data(cfg, date)
-    if not sportsgameodds.enabled():
-        return espn_data
-    game_data = sportsgameodds.fetch_game_data(cfg, date, debug_dir=data_dir / "debug")
-    if not game_data["games"]:
-        log.warning("SGO returned no games; falling back to ESPN")
-        return espn_data
-    # SGO sometimes lists fewer games than ESPN — fill the gaps so the
-    # slate stays complete (those games just won't have props)
-    missing = [k for k in espn_data["games"] if k not in game_data["games"]]
-    for k in missing:
-        game_data["games"][k] = espn_data["games"][k]
-    if missing:
-        log.info(f"filled {len(missing)} game(s) from ESPN missing in SGO")
+    game_data = espn_data
+    if sportsgameodds.enabled():
+        sgo_data = sportsgameodds.fetch_game_data(cfg, date,
+                                                  debug_dir=data_dir / "debug")
+        if sgo_data["games"]:
+            # SGO sometimes lists fewer games than ESPN — fill the gaps so
+            # the slate stays complete (those games just won't have props)
+            missing = [k for k in espn_data["games"]
+                       if k not in sgo_data["games"]]
+            for k in missing:
+                sgo_data["games"][k] = espn_data["games"][k]
+            if missing:
+                log.info(f"filled {len(missing)} game(s) from ESPN "
+                         "missing in SGO")
+            game_data = sgo_data
+        else:
+            log.warning("SGO returned no games; falling back to ESPN")
+    # Keyless props fallbacks for games SGO couldn't cover (e.g. WNBA is
+    # outside the SGO free tier). Overlay adapters: they attach props to
+    # the existing slate and never add or rename games.
+    for adapter in (bovada, underdog):
+        if all(g["props"] for g in game_data["games"].values()):
+            break
+        if not adapter.enabled(cfg):
+            continue
+        if adapter.fill_props(cfg, date, game_data,
+                              debug_dir=data_dir / "debug"):
+            game_data["source"] += f"+{adapter.SOURCE}"
     return game_data
 
 

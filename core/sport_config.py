@@ -49,6 +49,18 @@ class SportConfig:
         return self.raw.get("sportsgameodds", {}).get("league_id", self.key.upper())
 
     @property
+    def bovada_league_path(self) -> str:
+        """Bovada site-API league path, e.g. 'basketball/wnba'
+        (keyless props fallback when SGO can't serve the league)."""
+        return self.raw.get("bovada", {}).get("league_path", "")
+
+    @property
+    def underdog_sport_id(self) -> str:
+        """Underdog Fantasy sport_id, e.g. 'WNBA' (keyless props
+        fallback after Bovada)."""
+        return self.raw.get("underdog", {}).get("sport_id", "")
+
+    @property
     def prop_markets(self) -> list:
         """[{key, label, stat}] prop markets to request from odds providers."""
         return self.raw.get("prop_markets", [])

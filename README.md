@@ -38,6 +38,8 @@ core/                  Sport-agnostic analysis (ported from nba-sentiment)
 adapters/
   odds/espn.py             Lines + scores, keyless, 20+ leagues
   odds/sportsgameodds.py   Lines + player props (SGO_API_KEY)
+  odds/bovada.py           Player-props overlay, keyless (SGO fallback)
+  odds/underdog.py         Player-props overlay, keyless (last fallback)
   markets/polymarket.py    Game-winner probs, keyless (primary PM source)
   markets/kalshi.py        Same via Kalshi public API (opportunistic; thin books)
   markets/signals.py       PM-vs-book edge + intraday steam tracking
@@ -88,6 +90,8 @@ Create `sports/<key>/config.json` with:
 
 - `espn.league_path` — e.g. `"football/nfl"`, `"hockey/nhl"`
 - `sportsgameodds.league_id` — e.g. `"NFL"`
+- `bovada.league_path` / `underdog.sport_id` — keyless props fallbacks
+  for leagues SGO can't serve (e.g. WNBA on the free tier)
 - `prop_markets` + `stat_aliases` — the sport's prop language
 - `team_keywords` — nickname/abbreviation -> full team name
 - `subreddits` — where its betting chatter lives

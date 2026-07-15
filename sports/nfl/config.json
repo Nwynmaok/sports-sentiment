@@ -6,6 +6,12 @@
   "sportsgameodds": {
     "league_id": "NFL"
   },
+  "bovada": {
+    "league_path": "football/nfl"
+  },
+  "underdog": {
+    "sport_id": "NFL"
+  },
   "prop_markets": [
     {
       "key": "passingYards",

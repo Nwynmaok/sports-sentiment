@@ -6,6 +6,12 @@
   "sportsgameodds": {
     "league_id": "NBA"
   },
+  "bovada": {
+    "league_path": "basketball/nba"
+  },
+  "underdog": {
+    "sport_id": "NBA"
+  },
   "prop_markets": [
     {
       "key": "points",
@@ -36,6 +42,11 @@
       "key": "steals",
       "label": "Steals",
       "stat": "steals"
+    },
+    {
+      "key": "pra",
+      "label": "Pts+Reb+Ast",
+      "stat": "pra"
     }
   ],
   "stat_aliases": {
@@ -62,7 +73,8 @@
     "pra": [
       "pra",
       "pts+reb+ast",
-      "points rebounds assists"
+      "points rebounds assists",
+      "p+r+a"
     ],
     "threes": [
       "3pm",

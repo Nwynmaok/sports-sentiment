@@ -6,6 +6,12 @@
   "sportsgameodds": {
     "league_id": "MLB"
   },
+  "bovada": {
+    "league_path": "baseball/mlb"
+  },
+  "underdog": {
+    "sport_id": "MLB"
+  },
   "prop_markets": [
     {
       "key": "pitching_strikeouts",
