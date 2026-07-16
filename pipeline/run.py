@@ -42,7 +42,7 @@ from adapters.social import telegram_channels as telegram
 from adapters.social import timeline_cache
 from adapters.social.base import dedupe_posts, filter_stale_posts
 from pipeline.cluster import parse_game_time
-from pipeline import delivery, news_dedup, grading
+from pipeline import dashboard, delivery, news_dedup, grading
 
 ROOT = Path(__file__).resolve().parent.parent
 log = logging.getLogger("pipeline")
@@ -312,7 +312,16 @@ def run(sport: str, date: str, fmt: str, max_queries: int, notify: bool = True,
                                     grading_text, cfg.team_keywords)
     print(digest)
     if notify:
-        delivery.send_text(digest)
+        if dashboard.enabled():
+            # Picks land on the dashboard; the server sends the one-line
+            # Telegram nudge (picks are time-sensitive).
+            dashboard.post_event(
+                source="sports-sentiment", kind="betting-picks",
+                title=f"{cfg.display_name} picks {date}", body=digest,
+                dedupe_key=f"{sport}-{date}", meta={"sport": sport},
+                nudge=True)
+        else:
+            delivery.send_text(digest)
 
     return sug_data
 
