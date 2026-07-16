@@ -6,8 +6,9 @@ no key). Two layers of caching in data/<sport>/stats/:
     players_index.json  all active players (one request, refreshed daily)
     player_logs.json    per-player game logs, refetched at most once/day
 
-Sport-gated via config player_stats.source == "mlb_statsapi"; NBA/NFL
-get their own sources later behind the same interface.
+Sport-gated via config player_stats.source == "mlb_statsapi"; the
+basketball/football leagues use espn_player_logs behind the same
+interface (source == "espn_site").
 """
 
 import json
@@ -134,8 +135,12 @@ class PlayerLogs:
 
 
 def open_logs(cfg, data_dir: Path, season: int = None):
-    """Returns a PlayerLogs or None if the sport has no source yet."""
+    """Returns a player-log source or None if the sport has none yet."""
     source = cfg.raw.get("player_stats", {}).get("source")
-    if source != "mlb_statsapi":
-        return None
-    return PlayerLogs(data_dir, season or datetime.now().year)
+    if source == "mlb_statsapi":
+        return PlayerLogs(data_dir, season or datetime.now().year)
+    if source == "espn_site":
+        from . import espn_player_logs
+        return espn_player_logs.EspnPlayerLogs(
+            cfg.espn_league_path, data_dir, season or datetime.now().year)
+    return None

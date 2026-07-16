@@ -16,32 +16,44 @@
     {
       "key": "passingYards",
       "label": "Passing Yards",
-      "stat": "passing yards"
+      "stat": "passing yards",
+      "group": "box",
+      "statsapi_field": "passingYards"
     },
     {
       "key": "rushingYards",
       "label": "Rushing Yards",
-      "stat": "rushing yards"
+      "stat": "rushing yards",
+      "group": "box",
+      "statsapi_field": "rushingYards"
     },
     {
       "key": "receivingYards",
       "label": "Receiving Yards",
-      "stat": "receiving yards"
+      "stat": "receiving yards",
+      "group": "box",
+      "statsapi_field": "receivingYards"
     },
     {
       "key": "receptions",
       "label": "Receptions",
-      "stat": "receptions"
+      "stat": "receptions",
+      "group": "box",
+      "statsapi_field": "receptions"
     },
     {
       "key": "passingTouchdowns",
       "label": "Passing TDs",
-      "stat": "passing tds"
+      "stat": "passing tds",
+      "group": "box",
+      "statsapi_field": "passingTouchdowns"
     },
     {
       "key": "touchdowns",
       "label": "Anytime TD",
-      "stat": "touchdowns"
+      "stat": "touchdowns",
+      "group": "box",
+      "statsapi_field": "touchdowns"
     }
   ],
   "stat_aliases": {
@@ -154,5 +166,11 @@
     "gap_minutes": 90,
     "max_cluster_runs": 3,
     "lead_minutes": 75
+  },
+  "player_stats": {
+    "source": "espn_site",
+    "min_games": 8,
+    "shrink_k": 20,
+    "prop_ev_threshold": 0.05
   }
 }

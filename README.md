@@ -47,6 +47,8 @@ model/
   ingest.py                Incremental historical results (data/<sport>/stats/)
   team_model.py            Shrunk off/def ratings, normal totals/margins
   player_logs.py           Player game logs (MLB StatsAPI, cached daily)
+  espn_player_logs.py      Same interface via ESPN box scores/gamelogs
+                           (WNBA/NBA/NFL — grading + prop priors)
   player_model.py          P(over line) per prop: Poisson/normal, shrunk to line
   recommend.py             +EV recs vs slate lines (de-biased, market-humble)
   ev.py                    EV + fractional Kelly

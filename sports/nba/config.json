@@ -16,37 +16,51 @@
     {
       "key": "points",
       "label": "Points",
-      "stat": "points"
+      "stat": "points",
+      "group": "box",
+      "statsapi_field": "points"
     },
     {
       "key": "rebounds",
       "label": "Rebounds",
-      "stat": "rebounds"
+      "stat": "rebounds",
+      "group": "box",
+      "statsapi_field": "rebounds"
     },
     {
       "key": "assists",
       "label": "Assists",
-      "stat": "assists"
+      "stat": "assists",
+      "group": "box",
+      "statsapi_field": "assists"
     },
     {
       "key": "threes",
       "label": "3-Pointers",
-      "stat": "threes"
+      "stat": "threes",
+      "group": "box",
+      "statsapi_field": "threes"
     },
     {
       "key": "blocks",
       "label": "Blocks",
-      "stat": "blocks"
+      "stat": "blocks",
+      "group": "box",
+      "statsapi_field": "blocks"
     },
     {
       "key": "steals",
       "label": "Steals",
-      "stat": "steals"
+      "stat": "steals",
+      "group": "box",
+      "statsapi_field": "steals"
     },
     {
       "key": "pra",
       "label": "Pts+Reb+Ast",
-      "stat": "pra"
+      "stat": "pra",
+      "group": "box",
+      "statsapi_field": "pra"
     }
   ],
   "stat_aliases": {
@@ -193,5 +207,11 @@
     "gap_minutes": 60,
     "max_cluster_runs": 3,
     "lead_minutes": 75
+  },
+  "player_stats": {
+    "source": "espn_site",
+    "min_games": 8,
+    "shrink_k": 20,
+    "prop_ev_threshold": 0.05
   }
 }
